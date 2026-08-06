@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Departures">
   <meta name="description" content="Upcoming departures for bus routes 59A and 14A in Margareten, Vienna.">
-  <link rel="manifest" href="./manifest.webmanifest?v=21">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=21">
+  <link rel="manifest" href="./manifest.webmanifest?v=23">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=23">
   <title>59A &amp; 14A Departures</title>
   <style>
     :root {
@@ -79,8 +79,8 @@
     .access-input { min-width:0; height:44px; padding:0 13px; border:1px solid var(--line);
       border-radius:13px; outline:none; color:var(--text); background:var(--bg); font:inherit; }
     .access-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,103,177,.14); }
-    .access-submit { height:44px; padding:0 16px; border:0; border-radius:13px; color:#fff;
-      background:var(--blue); font-weight:750; cursor:pointer; touch-action:manipulation; }
+    .access-submit { height:44px; padding:0 16px; border:1px solid var(--line); border-radius:13px;
+      color:var(--text); background:var(--bg); font-weight:700; cursor:pointer; touch-action:manipulation; }
     .access-submit:active { transform:scale(.98); }
     .access-error { margin:12px 0 0; color:var(--danger); font-size:12px; line-height:1.35; }
     .board { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -122,7 +122,7 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img class="app-mark" src="./icons/icon-192.png?v=21" alt="">
+        <img class="app-mark" src="./icons/icon-192.png?v=23" alt="">
         <div>
           <h1>Next departures</h1>
           <div class="route-tags" aria-label="Routes 59A and 14A"><span class="route-tag">59A</span><span class="route-tag">14A</span></div>
@@ -138,7 +138,7 @@
     <div class="notice" id="notice" role="status"></div>
     <section class="access-card" id="access-panel">
       <h2 class="access-title">Access required</h2>
-      <p class="access-copy">Enter the shared access key to load departures. The key is not stored on this device.</p>
+      <p class="access-copy">Enter the shared access key once. It is saved in this browser after a successful connection.</p>
       <form class="access-form" id="access-form">
         <input class="access-input" id="access-key" type="password" placeholder="Access key" aria-label="Access key" autocomplete="off" autocapitalize="none" spellcheck="false" required>
         <button class="access-submit" type="submit">Connect</button>
@@ -151,8 +151,9 @@
 
   <script>
     // Local development uses dev-server.py. Set this to the deployed Worker URL for GitHub Pages.
-    const APP_VERSION = 'v21';
+    const APP_VERSION = 'v23';
     const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
+    const ACCESS_KEY_STORAGE_KEY = 'vienna-bus-departures-access-key';
     const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
     const API_BASE_URL = LOCAL_HOSTS.has(location.hostname)
       ? `${location.origin}/api/monitor`
@@ -169,7 +170,7 @@
       maxDepartures: 2,
       maxDataAgeMs: 60_000,
       requestTimeoutMs: 10_000,
-      minRefreshIndicatorMs: 2_000
+      minRefreshIndicatorMs: 1_500
     };
     const board = document.querySelector('#board');
     const notice = document.querySelector('#notice');
@@ -180,14 +181,33 @@
     const footer = document.querySelector('#footer');
     const updated = document.querySelector('#updated');
     const refreshButton = document.querySelector('#refresh');
-    let accessKey = '';
+    let accessKey = readStoredAccessKey();
     let busy = false;
     let currentData = [];
     let dataTimestamp = 0;
     let successTimer;
     let failureTimer;
+    let autoRefreshTimer;
 
     class AccessKeyError extends Error {}
+
+    function readStoredAccessKey() {
+      try {
+        return localStorage.getItem(ACCESS_KEY_STORAGE_KEY)?.trim() ?? '';
+      } catch {
+        return '';
+      }
+    }
+    function storeAccessKey(value) {
+      try {
+        localStorage.setItem(ACCESS_KEY_STORAGE_KEY, value);
+      } catch {}
+    }
+    function removeStoredAccessKey() {
+      try {
+        localStorage.removeItem(ACCESS_KEY_STORAGE_KEY);
+      } catch {}
+    }
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -328,6 +348,7 @@
         if (payload?.message?.messageCode !== 1) throw new Error('Invalid API response');
         const data = normalize(payload);
         currentData = data; dataTimestamp = Date.now();
+        storeAccessKey(accessKey);
         render(data); updated.textContent = `Updated ${formatClock(dataTimestamp)}`;
         succeeded = true;
       } catch (error) {
@@ -345,6 +366,7 @@
         refreshButton.classList.remove('loading');
         refreshButton.setAttribute('aria-label', 'Refresh departures');
         if (accessRejected) {
+          removeStoredAccessKey();
           showAccessPanel('The access key is incorrect.');
           return;
         }
@@ -365,9 +387,13 @@
       accessKey = candidate;
       accessKeyInput.value = '';
       showDeparturesInterface();
+      resetAutoRefreshTimer();
       loadDepartures({ initial:true });
     });
-    refreshButton.addEventListener('click', () => loadDepartures({ manual:true }));
+    refreshButton.addEventListener('click', () => {
+      resetAutoRefreshTimer();
+      loadDepartures({ manual:true });
+    });
     window.addEventListener('online', () => { setNotice(''); loadDepartures(); });
     window.addEventListener('offline', () => {
       if (!dataTimestamp || Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs) renderFailure();
@@ -392,6 +418,14 @@
         worker.postMessage({ type:'GET_VERSION' }, [channel.port2]);
       });
     }
+    function resetAutoRefreshTimer() {
+      clearTimeout(autoRefreshTimer);
+      autoRefreshTimer = setTimeout(() => {
+        if (dataTimestamp && Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs && (document.hidden || !navigator.onLine)) renderFailure();
+        if (!document.hidden && navigator.onLine) loadDepartures();
+        resetAutoRefreshTimer();
+      }, CONFIG.refreshMs);
+    }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         const hadController = Boolean(navigator.serviceWorker.controller);
@@ -408,11 +442,13 @@
           .catch(() => {});
       });
     }
-    showAccessPanel();
-    setInterval(() => {
-      if (dataTimestamp && Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs && (document.hidden || !navigator.onLine)) renderFailure();
-      if (!document.hidden && navigator.onLine) loadDepartures();
-    }, CONFIG.refreshMs);
+    if (accessKey) {
+      showDeparturesInterface();
+      loadDepartures({ initial:true });
+    } else {
+      showAccessPanel();
+    }
+    resetAutoRefreshTimer();
   </script>
 </body>
 </html>

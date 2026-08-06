@@ -5,12 +5,12 @@ A small, framework-free Progressive Web App showing upcoming departures for bus 
 ## Features
 
 - Two upcoming departures per direction in a compact 2×2 layout
-- Automatic refresh every 20 seconds while the app is visible and online
+- Automatic refresh every 20 seconds while the app is visible and online; manual refresh restarts the 20-second timer
 - Manual refresh with success and failure feedback
 - Automatic light and dark mode
 - Installable on iPhone from Safari
 - Shared access key required before departure data can be requested
-- Access key is held in memory only and is never persisted by the app
+- Access key is stored in the browser only after a successful connection
 - Offline app shell; API responses are never cached or stored persistently
 - Stale departures are removed after one minute
 
@@ -79,7 +79,7 @@ The Worker requires the `ACCESS_KEY` secret, accepts the configured browser orig
 5. Save and open the generated GitHub Pages URL after deployment completes.
 6. Enter the same value stored in Cloudflare as `ACCESS_KEY` when the app asks for access.
 
-This release uses version `v21`. Before a future upload, increment `APP_VERSION` in `index.html`, `dev-server.py`, and `proxy/cloudflare-worker.js`, increment `CACHE_VERSION` in `service-worker.js`, and update the matching asset query strings in `index.html`, `service-worker.js`, and `manifest.webmanifest`.
+This release uses version `v23`. Before a future upload, increment `APP_VERSION` in `index.html`, `dev-server.py`, and `proxy/cloudflare-worker.js`, increment `CACHE_VERSION` in `service-worker.js`, and update the matching asset query strings in `index.html`, `service-worker.js`, and `manifest.webmanifest`.
 
 ## Optional local test
 
@@ -100,7 +100,7 @@ Then open `http://127.0.0.1:8080` and enter that key in the app.
 
 The interface can open offline after its first successful load. Current departure information always requires an internet connection.
 
-The access key is not stored. A page reload or a newly started app session therefore asks for it again. Anyone who knows the shared key can use the Worker; rotate the Cloudflare secret if the key is disclosed.
+After the first successful connection, the access key is stored in this browser's local storage and reused on later page loads and app sessions. Clearing the site's browser data removes it. Anyone who can access the device and browser profile may be able to use the stored key. Rotate the Cloudflare secret if the key is disclosed.
 
 ## Configuration
 
