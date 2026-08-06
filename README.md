@@ -35,8 +35,6 @@ icons/
   apple-touch-icon.png
   icon-192.png
   icon-512.png
-proxy/
-  cloudflare-worker.js
 ```
 
 The frontend is fully static. `proxy/cloudflare-worker.js` is deployed separately because the Wiener Linien API does not allow direct cross-origin browser requests from GitHub Pages.
