@@ -37,57 +37,7 @@ icons/
   icon-512.png
 ```
 
-The frontend is fully static. `proxy/cloudflare-worker.js` is deployed separately because the Wiener Linien API does not allow direct cross-origin browser requests from GitHub Pages.
-
-## Deploy the Cloudflare Worker
-
-1. In **Cloudflare → Workers & Pages**, create a Worker from the **Hello World** template and deploy it once.
-2. Open **Edit code**, replace the template with `proxy/cloudflare-worker.js`, and set `ALLOWED_ORIGIN` to the future GitHub Pages origin without a repository path:
-
-   ```js
-   const ALLOWED_ORIGIN = 'https://YOUR-GITHUB-USERNAME.github.io';
-   ```
-
-   Use the custom-domain origin instead if GitHub Pages is served from a custom domain.
-
-3. Deploy the Worker code.
-4. Open the Worker's **Settings → Variables and Secrets**, select **Add**, choose **Secret**, and create:
-
-   ```text
-   Name:  ACCESS_KEY
-   Value: your own long random ASCII key without spaces
-   ```
-
-   Deploy the secret change. Never put this value in the repository or directly into the Worker source.
-
-5. Copy the deployed `workers.dev` URL and set `PRODUCTION_API_BASE_URL` in `index.html`:
-
-   ```js
-   const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
-   ```
-
-The Worker requires the `ACCESS_KEY` secret, accepts the configured browser origin, exposes only `/monitor`, and permits only the stop IDs used by this app. API responses are marked `no-store`.
-
-## Publish with GitHub Pages
-
-1. Upload all repository files to GitHub. Do not upload `.DS_Store`, `.env`, or `.dev.vars` files.
-2. Open **Settings → Pages**.
-3. Under **Build and deployment**, select **Deploy from a branch**.
-4. Select the branch containing the app (normally `main`) and the repository root (`/`).
-5. Save and open the generated GitHub Pages URL after deployment completes.
-6. Enter the same value stored in Cloudflare as `ACCESS_KEY` when the app asks for access.
-
-This release uses version `v23`. Before a future upload, increment `APP_VERSION` in `index.html`, `dev-server.py`, and `proxy/cloudflare-worker.js`, increment `CACHE_VERSION` in `service-worker.js`, and update the matching asset query strings in `index.html`, `service-worker.js`, and `manifest.webmanifest`.
-
-## Optional local test
-
-Run the development server with the same key supplied as an environment variable:
-
-```sh
-BUS_DEPARTURES_ACCESS_KEY='your-key' python3 dev-server.py
-```
-
-Then open `http://127.0.0.1:8080` and enter that key in the app.
+The frontend is fully static. `cloudflare-worker.js` is deployed separately because the Wiener Linien API does not allow direct cross-origin browser requests from GitHub Pages.
 
 ## Install on iPhone
 
