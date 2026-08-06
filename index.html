@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101416" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Departures">
+  <meta name="description" content="Upcoming departures for bus routes 59A and 14A in Margareten, Vienna.">
+  <link rel="manifest" href="./manifest.webmanifest?v=21">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=21">
+  <title>59A &amp; 14A Departures</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f1ea; --surface: rgba(255,255,255,.78); --text: #172026;
+      --muted: #647078; --line: rgba(23,32,38,.11); --blue: #0067b1;
+      --danger:#95504c; --danger-bg:#f4e2df; --warning-bg:rgba(226,151,31,.16);
+      --shadow: 0 18px 50px rgba(35,30,24,.10); --radius: 24px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#101416; --surface:rgba(29,35,38,.82); --text:#f4f2ec;
+        --muted:#9ba5aa; --line:rgba(255,255,255,.11); --danger-bg:rgba(149,80,76,.24);
+        --warning-bg:rgba(226,151,31,.20); --shadow:0 20px 50px rgba(0,0,0,.28); }
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display:none!important; }
+    html { background: var(--bg); }
+    body { margin:0; min-height:100dvh; color:var(--text); background:
+      radial-gradient(circle at 90% -10%, rgba(0,103,177,.16), transparent 36%), var(--bg);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+      -webkit-font-smoothing:antialiased; }
+    button { font:inherit; }
+    .app { width:min(100%, 600px); min-height:100dvh; margin:auto; padding:
+      max(20px, env(safe-area-inset-top)) 18px max(26px, env(safe-area-inset-bottom)); }
+    header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:8px 2px 28px; }
+    .brand { display:flex; align-items:flex-start; gap:13px; min-width:0; }
+    .header-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:48px; }
+    .app-mark { flex:0 0 50px; width:50px; height:50px; border-radius:14px;
+      box-shadow:0 10px 25px rgba(0,83,190,.24); }
+    h1 { margin:0; font-size:clamp(23px,7vw,31px); letter-spacing:-.035em; line-height:1.05; }
+    .route-tags { display:flex; gap:5px; margin-top:6px; }
+    .route-tag { display:inline-grid; place-items:center; min-width:34px; height:20px; padding:0 7px;
+      border-radius:6px; background:var(--blue); color:#fff; font-family:Arial,Helvetica,sans-serif;
+      font-size:11px; font-weight:800; letter-spacing:-.2px; }
+    .station { margin:5px 0 0; color:var(--muted); font-size:13px; line-height:1.3; }
+    .refresh { position:relative; display:grid; width:48px; height:48px; padding:0; place-items:center;
+      border:0; border-radius:16px; color:var(--text);
+      background:var(--surface); box-shadow:var(--shadow); cursor:pointer; touch-action:manipulation;
+      transition:background-color .35s ease, color .35s ease, box-shadow .35s ease, transform .18s ease; }
+    .refresh:active { transform:scale(.96); }
+    .refresh[disabled] { opacity:.55; }
+    .refresh-spinner { display:grid; width:21px; height:21px; margin:auto; place-items:center;
+      opacity:1; transform-origin:center; transition:opacity .28s ease; }
+    .refresh-spinner svg { display:block; width:21px; height:21px; }
+    .refresh.loading .refresh-spinner { animation:spin .8s linear infinite; will-change:transform; }
+    .refresh::after { position:absolute; inset:0; display:grid; place-items:center; opacity:0;
+      font-size:23px; font-weight:800; transform:scale(.65); transition:opacity .28s ease, transform .35s ease; }
+    .refresh.success { color:var(--text); background:var(--surface); box-shadow:var(--shadow); }
+    .refresh.success .refresh-spinner, .refresh.failed .refresh-spinner { opacity:0; }
+    .refresh.success::after { content:'✓'; opacity:1; transform:scale(1); }
+    .refresh.failed { color:var(--danger); background:var(--danger-bg); box-shadow:0 10px 25px rgba(149,80,76,.13); }
+    .refresh.failed::after { content:'!'; opacity:1; transform:scale(1); }
+    @media (prefers-color-scheme: dark) {
+      .refresh.failed { color:#efc1bd; background:#553330; }
+    }
+    @keyframes spin { from { transform:rotate(0turn); } to { transform:rotate(-1turn); } }
+    .notice { display:none; margin:0 0 16px; padding:12px 14px; border-radius:15px;
+      font-size:13px; line-height:1.35; background:var(--danger-bg); color:var(--text); }
+    .notice.visible { display:block; }
+    .notice.offline { background:var(--warning-bg); }
+    .access-card { padding:20px; border:1px solid var(--line); border-radius:var(--radius);
+      background:var(--surface); box-shadow:var(--shadow); backdrop-filter:blur(18px); }
+    .access-title { margin:0; font-size:20px; letter-spacing:-.025em; }
+    .access-copy { margin:7px 0 16px; color:var(--muted); font-size:13px; line-height:1.4; }
+    .access-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+    .access-input { min-width:0; height:44px; padding:0 13px; border:1px solid var(--line);
+      border-radius:13px; outline:none; color:var(--text); background:var(--bg); font:inherit; }
+    .access-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,103,177,.14); }
+    .access-submit { height:44px; padding:0 16px; border:0; border-radius:13px; color:#fff;
+      background:var(--blue); font-weight:750; cursor:pointer; touch-action:manipulation; }
+    .access-submit:active { transform:scale(.98); }
+    .access-error { margin:12px 0 0; color:var(--danger); font-size:12px; line-height:1.35; }
+    .board { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .card { overflow:hidden; border:1px solid var(--line); border-radius:var(--radius);
+      background:var(--surface); box-shadow:var(--shadow); backdrop-filter:blur(18px); }
+    .card-head { padding:12px 12px 10px; border-bottom:1px solid var(--line); }
+    .direction { display:flex; align-items:center; gap:9px; min-width:0; }
+    .line-badge { display:grid; place-items:center; flex:0 0 42px; height:29px; border-radius:5px;
+      background:var(--blue); color:#fff; font-family:Arial,Helvetica,sans-serif; font-size:15px;
+      font-weight:800; letter-spacing:-.4px; }
+    .direction-text { min-width:0; }
+    .eyebrow { display:block; overflow:hidden; margin-bottom:2px; color:var(--muted); font-size:9px;
+      font-weight:750; letter-spacing:.04em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+    h2 { overflow:hidden; margin:0; font-size:15px; letter-spacing:-.025em;
+      text-overflow:ellipsis; white-space:nowrap; }
+    .departures { list-style:none; margin:0; padding:2px 12px 5px; }
+    .departure { display:grid; grid-template-columns:1fr auto; align-items:center; gap:14px;
+      min-height:51px; border-bottom:1px solid var(--line); }
+    .departure:last-child { border-bottom:0; }
+    .time { font-size:14px; font-variant-numeric:tabular-nums; }
+    .minutes { font-size:21px; font-weight:820; letter-spacing:-.035em; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .minutes small { margin-left:2px; color:var(--muted); font-size:9px; font-weight:650; letter-spacing:0; }
+    .minutes.now { color:var(--text); font-size:15px; }
+    .state { min-height:104px; display:grid; place-items:center; padding:18px 12px; color:var(--muted);
+      text-align:center; font-size:11px; line-height:1.4; }
+    .skeleton { width:100%; }
+    .skeleton span { display:block; height:16px; margin:15px 0; border-radius:10px;
+      background:linear-gradient(90deg,var(--line),rgba(255,255,255,.14),var(--line));
+      background-size:220% 100%; animation:shimmer 1.3s infinite; }
+    @keyframes shimmer { to { background-position:-220% 0; } }
+    footer { display:flex; justify-content:flex-end; gap:12px; margin:18px 4px 0; color:var(--muted);
+      font-size:11px; line-height:1.35; }
+    footer span:last-child { text-align:right; }
+    @media (min-width:700px) { .app { padding-top:42px; } }
+    @media (prefers-reduced-motion:reduce) { * { animation:none!important; scroll-behavior:auto!important; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand">
+        <img class="app-mark" src="./icons/icon-192.png?v=21" alt="">
+        <div>
+          <h1>Next departures</h1>
+          <div class="route-tags" aria-label="Routes 59A and 14A"><span class="route-tag">59A</span><span class="route-tag">14A</span></div>
+          <p class="station">Arbeitergasse &amp; Bacherplatz</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="refresh" id="refresh" type="button" aria-label="Refresh departures">
+          <span class="refresh-spinner" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 11a8.1 8.1 0 0 0-15.5-3M4 4v4h4M4 13a8.1 8.1 0 0 0 15.5 3M20 20v-4h-4"/></svg></span>
+        </button>
+      </div>
+    </header>
+    <div class="notice" id="notice" role="status"></div>
+    <section class="access-card" id="access-panel">
+      <h2 class="access-title">Access required</h2>
+      <p class="access-copy">Enter the shared access key to load departures. The key is not stored on this device.</p>
+      <form class="access-form" id="access-form">
+        <input class="access-input" id="access-key" type="password" placeholder="Access key" aria-label="Access key" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+        <button class="access-submit" type="submit">Connect</button>
+      </form>
+      <p class="access-error" id="access-error" role="alert" hidden></p>
+    </section>
+    <section class="board" id="board" hidden></section>
+    <footer id="footer" hidden><span id="updated"></span></footer>
+  </main>
+
+  <script>
+    // Local development uses dev-server.py. Set this to the deployed Worker URL for GitHub Pages.
+    const APP_VERSION = 'v21';
+    const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
+    const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
+    const API_BASE_URL = LOCAL_HOSTS.has(location.hostname)
+      ? `${location.origin}/api/monitor`
+      : PRODUCTION_API_BASE_URL;
+
+    const CONFIG = {
+      journeys: [
+        { line:'59A', stopId:'1687', match:'Meidling', label:'Meidling Station', station:'Arbeitergasse' },
+        { line:'59A', stopId:'1698', match:'Karlsplatz', label:'Opera, Karlsplatz', station:'Arbeitergasse' },
+        { line:'14A', stopId:'754', match:'Reumannplatz', label:'Reumannplatz', station:'Arbeitergasse' },
+        { line:'14A', stopId:'770', match:'Neubaugasse', label:'Neubaugasse', station:'Bacherplatz' }
+      ],
+      refreshMs: 20_000,
+      maxDepartures: 2,
+      maxDataAgeMs: 60_000,
+      requestTimeoutMs: 10_000,
+      minRefreshIndicatorMs: 2_000
+    };
+    const board = document.querySelector('#board');
+    const notice = document.querySelector('#notice');
+    const accessPanel = document.querySelector('#access-panel');
+    const accessForm = document.querySelector('#access-form');
+    const accessKeyInput = document.querySelector('#access-key');
+    const accessError = document.querySelector('#access-error');
+    const footer = document.querySelector('#footer');
+    const updated = document.querySelector('#updated');
+    const refreshButton = document.querySelector('#refresh');
+    let accessKey = '';
+    let busy = false;
+    let currentData = [];
+    let dataTimestamp = 0;
+    let successTimer;
+    let failureTimer;
+
+    class AccessKeyError extends Error {}
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+    function formatClock(value) {
+      if (!value) return '–';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '–';
+      return new Intl.DateTimeFormat('en-GB', { hour:'2-digit', minute:'2-digit', hourCycle:'h23' }).format(date);
+    }
+    function render(data) {
+      board.innerHTML = CONFIG.journeys.map(journey => {
+        const departures = data
+          .filter(item => item.stopId === journey.stopId && item.line === journey.line && item.towards.includes(journey.match))
+          .sort((a, b) => Number(a.countdown) - Number(b.countdown))
+          .slice(0, CONFIG.maxDepartures);
+        const body = departures.length ? `<ul class="departures">${departures.map(item => {
+          const mins = Math.max(0, Number(item.countdown));
+          return `<li class="departure"><div class="time">${esc(formatClock(item.time))}</div><div class="minutes ${mins <= 1 ? 'now' : ''}">${mins <= 1 ? 'now' : `${mins}<small>min</small>`}</div></li>`;
+        }).join('')}</ul>` : '<div class="state">No departures in the next 60 minutes.</div>';
+        return `<article class="card"><div class="card-head"><div class="direction"><span class="line-badge">${esc(journey.line)}</span><div class="direction-text"><span class="eyebrow">${esc(journey.station)} · to</span><h2>${esc(journey.label)}</h2></div></div></div>${body}</article>`;
+      }).join('');
+      setNotice('');
+    }
+    function renderLoading() {
+      board.innerHTML = CONFIG.journeys.map(journey => `<article class="card"><div class="card-head"><div class="direction"><span class="line-badge">${esc(journey.line)}</span><div class="direction-text"><span class="eyebrow">${esc(journey.station)} · to</span><h2>${esc(journey.label)}</h2></div></div></div><div class="state"><div class="skeleton"><span></span><span></span></div></div></article>`).join('');
+    }
+    function setNotice(message, offline = false) {
+      notice.textContent = message;
+      notice.className = `notice${message ? ' visible' : ''}${offline ? ' offline' : ''}`;
+    }
+    function showAccessPanel(message = '') {
+      accessKey = '';
+      currentData = [];
+      dataTimestamp = 0;
+      updated.textContent = '';
+      accessKeyInput.value = '';
+      accessError.textContent = message;
+      accessError.hidden = !message;
+      accessPanel.hidden = false;
+      board.hidden = true;
+      footer.hidden = true;
+      refreshButton.disabled = true;
+      refreshButton.classList.remove('loading', 'success', 'failed');
+      refreshButton.setAttribute('aria-label', 'Enter access key first');
+      setNotice('');
+    }
+    function showDeparturesInterface() {
+      accessError.textContent = '';
+      accessError.hidden = true;
+      accessPanel.hidden = true;
+      board.hidden = false;
+      footer.hidden = false;
+      refreshButton.disabled = false;
+      refreshButton.setAttribute('aria-label', 'Refresh departures');
+      renderLoading();
+    }
+    function renderFailure() {
+      currentData = []; dataTimestamp = 0;
+      updated.textContent = '';
+      renderLoading();
+      setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
+    }
+    function showRefreshSuccess() {
+      clearTimeout(successTimer);
+      clearTimeout(failureTimer);
+      refreshButton.classList.remove('failed');
+      refreshButton.classList.add('success');
+      refreshButton.setAttribute('aria-label', 'Successfully refreshed');
+      successTimer = setTimeout(() => {
+        refreshButton.classList.remove('success');
+        refreshButton.setAttribute('aria-label', 'Refresh departures');
+      }, 1400);
+    }
+    function showRefreshFailure() {
+      clearTimeout(successTimer);
+      clearTimeout(failureTimer);
+      refreshButton.classList.remove('success');
+      refreshButton.classList.add('failed');
+      refreshButton.setAttribute('aria-label', 'Refresh failed');
+      failureTimer = setTimeout(() => {
+        refreshButton.classList.remove('failed');
+        refreshButton.setAttribute('aria-label', 'Refresh departures');
+      }, 1800);
+    }
+    function normalize(payload) {
+      const monitors = payload?.data?.monitors ?? [];
+      return monitors.flatMap(m => (m.lines ?? []).flatMap(line =>
+        (line.departures?.departure ?? []).map(dep => ({
+          stopId: String(m.locationStop?.properties?.attributes?.rbl ?? ''),
+          line: line.name ?? '',
+          towards: line.towards ?? dep.vehicle?.towards ?? '',
+          countdown: dep.departureTime?.countdown,
+          time: dep.departureTime?.timeReal ?? dep.departureTime?.timePlanned
+        }))
+      )).filter(item => {
+        const countdown = Number(item.countdown);
+        return Number.isFinite(countdown) && countdown >= 0 && countdown <= 60;
+      });
+    }
+    async function loadDepartures({ initial = false, manual = false } = {}) {
+      let succeeded = false;
+      let failed = false;
+      let accessRejected = false;
+      if (!accessKey) return;
+      const expired = dataTimestamp && Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs;
+      if (expired) { currentData = []; dataTimestamp = 0; renderLoading(); }
+      if (busy || document.hidden || !navigator.onLine) {
+        if (!navigator.onLine && (!dataTimestamp || Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs)) renderFailure();
+        else if (!navigator.onLine) setNotice('You are offline.', true);
+        if (manual && !navigator.onLine) showRefreshFailure();
+        return;
+      }
+      busy = true;
+      clearTimeout(successTimer);
+      clearTimeout(failureTimer);
+      board.setAttribute('aria-busy', 'true');
+      refreshButton.disabled = true;
+      refreshButton.classList.remove('success', 'failed');
+      refreshButton.classList.add('loading');
+      refreshButton.setAttribute('aria-label', 'Refreshing departures');
+      const refreshStartedAt = performance.now();
+      if (initial && !currentData.length) renderLoading();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
+      try {
+        if (API_BASE_URL.includes('YOUR-WORKER')) throw new Error('Production API URL is not configured');
+        const stopIds = [...new Set(CONFIG.journeys.map(journey => journey.stopId))];
+        const query = stopIds.map(id => `stopId=${encodeURIComponent(id)}`).join('&');
+        const response = await fetch(`${API_BASE_URL}?${query}`, {
+          headers: { Accept:'application/json', Authorization:`Bearer ${accessKey}` },
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        if (response.status === 401) throw new AccessKeyError();
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        if (payload?.message?.messageCode !== 1) throw new Error('Invalid API response');
+        const data = normalize(payload);
+        currentData = data; dataTimestamp = Date.now();
+        render(data); updated.textContent = `Updated ${formatClock(dataTimestamp)}`;
+        succeeded = true;
+      } catch (error) {
+        if (error instanceof AccessKeyError) accessRejected = true;
+        else if (!dataTimestamp || Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs) renderFailure();
+        else setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
+        failed = true;
+      } finally {
+        clearTimeout(timeout);
+        const indicatorDelay = CONFIG.minRefreshIndicatorMs - (performance.now() - refreshStartedAt);
+        if (indicatorDelay > 0) await new Promise(resolve => setTimeout(resolve, indicatorDelay));
+        busy = false;
+        board.setAttribute('aria-busy', 'false');
+        refreshButton.disabled = false;
+        refreshButton.classList.remove('loading');
+        refreshButton.setAttribute('aria-label', 'Refresh departures');
+        if (accessRejected) {
+          showAccessPanel('The access key is incorrect.');
+          return;
+        }
+        requestAnimationFrame(() => {
+          if (succeeded && !initial) showRefreshSuccess();
+          else if (failed && manual) showRefreshFailure();
+        });
+      }
+    }
+    accessForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const candidate = accessKeyInput.value.trim();
+      if (!candidate) {
+        accessError.textContent = 'Enter an access key.';
+        accessError.hidden = false;
+        return;
+      }
+      accessKey = candidate;
+      accessKeyInput.value = '';
+      showDeparturesInterface();
+      loadDepartures({ initial:true });
+    });
+    refreshButton.addEventListener('click', () => loadDepartures({ manual:true }));
+    window.addEventListener('online', () => { setNotice(''); loadDepartures(); });
+    window.addEventListener('offline', () => {
+      if (!dataTimestamp || Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs) renderFailure();
+      else setNotice('You are offline.', true);
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) return;
+      if (navigator.onLine) loadDepartures();
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(registration => registration?.update()).catch(() => {});
+      }
+    });
+    function getWorkerVersion(worker) {
+      if (!worker) return Promise.resolve(null);
+      return new Promise(resolve => {
+        const channel = new MessageChannel();
+        const timeout = setTimeout(() => resolve(null), 1_000);
+        channel.port1.onmessage = event => {
+          clearTimeout(timeout);
+          resolve(event.data?.version ?? null);
+        };
+        worker.postMessage({ type:'GET_VERSION' }, [channel.port2]);
+      });
+    }
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        let reloadingForUpdate = false;
+        navigator.serviceWorker.addEventListener('controllerchange', async () => {
+          if (!hadController || reloadingForUpdate) return;
+          const workerVersion = await getWorkerVersion(navigator.serviceWorker.controller);
+          if (workerVersion === APP_VERSION) return;
+          reloadingForUpdate = true;
+          location.reload();
+        });
+        navigator.serviceWorker.register('./service-worker.js', { updateViaCache:'none' })
+          .then(registration => registration.update())
+          .catch(() => {});
+      });
+    }
+    showAccessPanel();
+    setInterval(() => {
+      if (dataTimestamp && Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs && (document.hidden || !navigator.onLine)) renderFailure();
+      if (!document.hidden && navigator.onLine) loadDepartures();
+    }, CONFIG.refreshMs);
+  </script>
+</body>
+</html>
