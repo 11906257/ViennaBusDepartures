@@ -9,21 +9,24 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Departures">
   <meta name="description" content="Upcoming departures for bus routes 59A and 14A in Margareten, Vienna.">
-  <link rel="manifest" href="./manifest.webmanifest?v=23">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=23">
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="./manifest.webmanifest?v=25">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=25">
   <title>59A &amp; 14A Departures</title>
   <style>
     :root {
       color-scheme: light dark;
       --bg: #f4f1ea; --surface: rgba(255,255,255,.78); --text: #172026;
       --muted: #647078; --line: rgba(23,32,38,.11); --blue: #0067b1;
-      --danger:#95504c; --danger-bg:#f4e2df; --warning-bg:rgba(226,151,31,.16);
+      --danger:#95504c; --danger-bg:#f4e2df; --warning:#855000; --warning-bg:rgba(226,151,31,.18);
+      --warning-icon-bg:#955800; --warning-icon:#ffd89a;
       --shadow: 0 18px 50px rgba(35,30,24,.10); --radius: 24px;
     }
     @media (prefers-color-scheme: dark) {
       :root { --bg:#101416; --surface:rgba(29,35,38,.82); --text:#f4f2ec;
         --muted:#9ba5aa; --line:rgba(255,255,255,.11); --danger-bg:rgba(149,80,76,.24);
-        --warning-bg:rgba(226,151,31,.20); --shadow:0 20px 50px rgba(0,0,0,.28); }
+        --warning:#f2bd66; --warning-bg:rgba(226,151,31,.20);
+        --warning-icon-bg:#a86200; --warning-icon:#ffe0ad; --shadow:0 20px 50px rgba(0,0,0,.28); }
     }
     * { box-sizing: border-box; }
     [hidden] { display:none!important; }
@@ -83,7 +86,7 @@
       color:var(--text); background:var(--bg); font-weight:700; cursor:pointer; touch-action:manipulation; }
     .access-submit:active { transform:scale(.98); }
     .access-error { margin:12px 0 0; color:var(--danger); font-size:12px; line-height:1.35; }
-    .board { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .board { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
     .card { overflow:hidden; border:1px solid var(--line); border-radius:var(--radius);
       background:var(--surface); box-shadow:var(--shadow); backdrop-filter:blur(18px); }
     .card-head { padding:12px 12px 10px; border-bottom:1px solid var(--line); }
@@ -97,11 +100,20 @@
     h2 { overflow:hidden; margin:0; font-size:15px; letter-spacing:-.025em;
       text-overflow:ellipsis; white-space:nowrap; }
     .departures { list-style:none; margin:0; padding:2px 12px 5px; }
-    .departure { display:grid; grid-template-columns:1fr auto; align-items:center; gap:14px;
+    .departure { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px;
       min-height:51px; border-bottom:1px solid var(--line); }
     .departure:last-child { border-bottom:0; }
-    .time { font-size:14px; font-variant-numeric:tabular-nums; }
-    .minutes { font-size:21px; font-weight:820; letter-spacing:-.035em; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .time { grid-column:1; font-size:14px; font-variant-numeric:tabular-nums; }
+    .destination-tag { grid-column:2; display:flex; align-items:center; justify-self:center; gap:4px;
+      overflow:hidden; max-width:100%; padding:4px 7px; border-radius:7px; color:var(--warning);
+      background:var(--warning-bg); font-size:9px; font-weight:750; line-height:1.15; white-space:nowrap; }
+    .destination-alert { display:block; flex:0 0 14px; width:14px; height:14px; }
+    .destination-alert svg { display:block; width:100%; height:100%; }
+    .destination-alert-triangle { fill:var(--warning-icon-bg); }
+    .destination-alert-mark { fill:var(--warning-icon); }
+    .destination-name { overflow:hidden; text-overflow:ellipsis; }
+    .minutes { grid-column:3; justify-self:end; font-size:21px; font-weight:820; letter-spacing:-.035em;
+      font-variant-numeric:tabular-nums; white-space:nowrap; }
     .minutes small { margin-left:2px; color:var(--muted); font-size:9px; font-weight:650; letter-spacing:0; }
     .minutes.now { color:var(--text); font-size:15px; }
     .state { min-height:104px; display:grid; place-items:center; padding:18px 12px; color:var(--muted);
@@ -114,7 +126,10 @@
     footer { display:flex; justify-content:flex-end; gap:12px; margin:18px 4px 0; color:var(--muted);
       font-size:11px; line-height:1.35; }
     footer span:last-child { text-align:right; }
-    @media (min-width:700px) { .app { padding-top:42px; } }
+    @media (min-width:700px) {
+      .app { padding-top:42px; }
+      .board { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
     @media (prefers-reduced-motion:reduce) { * { animation:none!important; scroll-behavior:auto!important; } }
   </style>
 </head>
@@ -122,7 +137,7 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img class="app-mark" src="./icons/icon-192.png?v=23" alt="">
+        <img class="app-mark" src="./icons/icon-192.png?v=25" alt="">
         <div>
           <h1>Next departures</h1>
           <div class="route-tags" aria-label="Routes 59A and 14A"><span class="route-tag">59A</span><span class="route-tag">14A</span></div>
@@ -140,7 +155,7 @@
       <h2 class="access-title">Access required</h2>
       <p class="access-copy">Enter the shared access key once. It is saved in this browser after a successful connection.</p>
       <form class="access-form" id="access-form">
-        <input class="access-input" id="access-key" type="password" placeholder="Access key" aria-label="Access key" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+        <input class="access-input" id="access-key" type="password" placeholder="Access key" aria-label="Access key" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="256" required>
         <button class="access-submit" type="submit">Connect</button>
       </form>
       <p class="access-error" id="access-error" role="alert" hidden></p>
@@ -151,7 +166,7 @@
 
   <script>
     // Local development uses dev-server.py. Set this to the deployed Worker URL for GitHub Pages.
-    const APP_VERSION = 'v23';
+    const APP_VERSION = 'v25';
     const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
     const ACCESS_KEY_STORAGE_KEY = 'vienna-bus-departures-access-key';
     const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
@@ -159,19 +174,23 @@
       ? `${location.origin}/api/monitor`
       : PRODUCTION_API_BASE_URL;
 
-    const CONFIG = {
-      journeys: [
-        { line:'59A', stopId:'1687', match:'Meidling', label:'Meidling Station', station:'Arbeitergasse' },
-        { line:'59A', stopId:'1698', match:'Karlsplatz', label:'Opera, Karlsplatz', station:'Arbeitergasse' },
+    const CONFIG = Object.freeze({
+      journeys: Object.freeze([
+        { line:'59A', stopId:'1687', match:'Meidling', label:'Bhf. Meidling', station:'Arbeitergasse' },
+        { line:'59A', stopId:'1698', match:'Karlsplatz', label:'Oper, Karlsplatz', station:'Arbeitergasse' },
         { line:'14A', stopId:'754', match:'Reumannplatz', label:'Reumannplatz', station:'Arbeitergasse' },
         { line:'14A', stopId:'770', match:'Neubaugasse', label:'Neubaugasse', station:'Bacherplatz' }
-      ],
+      ].map(Object.freeze)),
       refreshMs: 20_000,
       maxDepartures: 2,
       maxDataAgeMs: 60_000,
       requestTimeoutMs: 10_000,
-      minRefreshIndicatorMs: 1_500
-    };
+      minRefreshIndicatorMs: 1_500,
+      maxAccessKeyLength: 256
+    });
+    const CLOCK_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+      hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+    });
     const board = document.querySelector('#board');
     const notice = document.querySelector('#notice');
     const accessPanel = document.querySelector('#access-panel');
@@ -188,12 +207,18 @@
     let successTimer;
     let failureTimer;
     let autoRefreshTimer;
+    let staleDataTimer;
+    let activeRequestController;
 
     class AccessKeyError extends Error {}
 
+    function normalizeAccessKey(value) {
+      const key = String(value ?? '').trim();
+      return key && key.length <= CONFIG.maxAccessKeyLength && !/\s/u.test(key) ? key : '';
+    }
     function readStoredAccessKey() {
       try {
-        return localStorage.getItem(ACCESS_KEY_STORAGE_KEY)?.trim() ?? '';
+        return normalizeAccessKey(localStorage.getItem(ACCESS_KEY_STORAGE_KEY));
       } catch {
         return '';
       }
@@ -216,17 +241,27 @@
       if (!value) return '–';
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return '–';
-      return new Intl.DateTimeFormat('en-GB', { hour:'2-digit', minute:'2-digit', hourCycle:'h23' }).format(date);
+      return CLOCK_FORMATTER.format(date);
+    }
+    function destinationMatches(value, expectedPart) {
+      return String(value ?? '').toLocaleLowerCase('de-AT').includes(expectedPart.toLocaleLowerCase('de-AT'));
+    }
+    function formatDestinationLabel(value) {
+      return String(value ?? '').replace(/\s+(?:(?:S|U|Ⓢ|Ⓤ)\s*)+$/u, '').trim();
     }
     function render(data) {
       board.innerHTML = CONFIG.journeys.map(journey => {
         const departures = data
-          .filter(item => item.stopId === journey.stopId && item.line === journey.line && item.towards.includes(journey.match))
+          .filter(item => item.stopId === journey.stopId && item.line === journey.line)
           .sort((a, b) => Number(a.countdown) - Number(b.countdown))
           .slice(0, CONFIG.maxDepartures);
         const body = departures.length ? `<ul class="departures">${departures.map(item => {
           const mins = Math.max(0, Number(item.countdown));
-          return `<li class="departure"><div class="time">${esc(formatClock(item.time))}</div><div class="minutes ${mins <= 1 ? 'now' : ''}">${mins <= 1 ? 'now' : `${mins}<small>min</small>`}</div></li>`;
+          const destinationLabel = formatDestinationLabel(item.vehicleTowards);
+          const alternateDestination = destinationLabel && !destinationMatches(item.vehicleTowards, journey.match)
+            ? `<span class="destination-tag" title="${esc(destinationLabel)}"><span class="destination-alert" aria-hidden="true"><svg viewBox="0 0 14 14"><path class="destination-alert-triangle" d="M7 1.1c.42 0 .8.23 1.02.61l5.18 9.08c.44.77-.11 1.71-1.02 1.71H1.82c-.91 0-1.46-.94-1.02-1.71l5.18-9.08C6.2 1.33 6.58 1.1 7 1.1Z"/><rect class="destination-alert-mark" x="6.35" y="4.25" width="1.3" height="4.35" rx=".65"/><circle class="destination-alert-mark" cx="7" cy="10.35" r=".75"/></svg></span><span class="destination-name">${esc(destinationLabel)}</span></span>`
+            : '';
+          return `<li class="departure"><div class="time">${esc(formatClock(item.time))}</div>${alternateDestination}<div class="minutes ${mins <= 1 ? 'now' : ''}">${mins <= 1 ? 'now' : `${mins}<small>min</small>`}</div></li>`;
         }).join('')}</ul>` : '<div class="state">No departures in the next 60 minutes.</div>';
         return `<article class="card"><div class="card-head"><div class="direction"><span class="line-badge">${esc(journey.line)}</span><div class="direction-text"><span class="eyebrow">${esc(journey.station)} · to</span><h2>${esc(journey.label)}</h2></div></div></div>${body}</article>`;
       }).join('');
@@ -240,6 +275,9 @@
       notice.className = `notice${message ? ' visible' : ''}${offline ? ' offline' : ''}`;
     }
     function showAccessPanel(message = '') {
+      cancelAutoRefresh();
+      cancelStaleDataTimer();
+      activeRequestController?.abort();
       accessKey = '';
       currentData = [];
       dataTimestamp = 0;
@@ -267,6 +305,7 @@
     }
     function renderFailure() {
       currentData = []; dataTimestamp = 0;
+      cancelStaleDataTimer();
       updated.textContent = '';
       renderLoading();
       setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
@@ -293,30 +332,64 @@
         refreshButton.setAttribute('aria-label', 'Refresh departures');
       }, 1800);
     }
+    function asArray(value) {
+      return Array.isArray(value) ? value : [];
+    }
+    function validDateValue(value) {
+      return value && Number.isFinite(Date.parse(value)) ? value : '';
+    }
+    function validApiPayload(payload) {
+      return payload?.message?.messageCode === 1 && Array.isArray(payload?.data?.monitors);
+    }
     function normalize(payload) {
-      const monitors = payload?.data?.monitors ?? [];
-      return monitors.flatMap(m => (m.lines ?? []).flatMap(line =>
-        (line.departures?.departure ?? []).map(dep => ({
-          stopId: String(m.locationStop?.properties?.attributes?.rbl ?? ''),
-          line: line.name ?? '',
-          towards: line.towards ?? dep.vehicle?.towards ?? '',
-          countdown: dep.departureTime?.countdown,
-          time: dep.departureTime?.timeReal ?? dep.departureTime?.timePlanned
-        }))
-      )).filter(item => {
-        const countdown = Number(item.countdown);
-        return Number.isFinite(countdown) && countdown >= 0 && countdown <= 60;
-      });
+      const departures = [];
+      for (const monitor of asArray(payload?.data?.monitors)) {
+        const stopId = String(monitor?.locationStop?.properties?.attributes?.rbl ?? '').trim();
+        for (const line of asArray(monitor?.lines)) {
+          const lineName = String(line?.name ?? '').trim();
+          for (const departure of asArray(line?.departures?.departure)) {
+            const departureTime = departure?.departureTime;
+            const countdown = Number(departureTime?.countdown);
+            const time = validDateValue(departureTime?.timeReal)
+              || validDateValue(departureTime?.timePlanned);
+            if (!stopId || !lineName || !time || !Number.isFinite(countdown) || countdown < 0 || countdown > 60) continue;
+            departures.push({
+              stopId,
+              line:lineName,
+              vehicleTowards:String(departure?.vehicle?.towards ?? line?.towards ?? '').trim(),
+              countdown,
+              time
+            });
+          }
+        }
+      }
+      return departures;
+    }
+    function dataIsStale(now = Date.now()) {
+      return !dataTimestamp || now - dataTimestamp >= CONFIG.maxDataAgeMs;
+    }
+    function cancelStaleDataTimer() {
+      clearTimeout(staleDataTimer);
+      staleDataTimer = undefined;
+    }
+    function scheduleStaleDataExpiry() {
+      cancelStaleDataTimer();
+      if (!dataTimestamp || document.hidden) return;
+      const remaining = Math.max(0, dataTimestamp + CONFIG.maxDataAgeMs - Date.now());
+      staleDataTimer = setTimeout(() => {
+        staleDataTimer = undefined;
+        if (dataIsStale()) renderFailure();
+      }, remaining + 25);
     }
     async function loadDepartures({ initial = false, manual = false } = {}) {
       let succeeded = false;
       let failed = false;
       let accessRejected = false;
       if (!accessKey) return;
-      const expired = dataTimestamp && Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs;
+      const expired = dataTimestamp && dataIsStale();
       if (expired) { currentData = []; dataTimestamp = 0; renderLoading(); }
       if (busy || document.hidden || !navigator.onLine) {
-        if (!navigator.onLine && (!dataTimestamp || Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs)) renderFailure();
+        if (!navigator.onLine && dataIsStale()) renderFailure();
         else if (!navigator.onLine) setNotice('You are offline.', true);
         if (manual && !navigator.onLine) showRefreshFailure();
         return;
@@ -327,14 +400,16 @@
       board.setAttribute('aria-busy', 'true');
       refreshButton.disabled = true;
       refreshButton.classList.remove('success', 'failed');
-      refreshButton.classList.add('loading');
-      refreshButton.setAttribute('aria-label', 'Refreshing departures');
-      const refreshStartedAt = performance.now();
+      if (!initial) {
+        refreshButton.classList.add('loading');
+        refreshButton.setAttribute('aria-label', 'Refreshing departures');
+      }
+      const refreshStartedAt = initial ? 0 : performance.now();
       if (initial && !currentData.length) renderLoading();
       const controller = new AbortController();
+      activeRequestController = controller;
       const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
       try {
-        if (API_BASE_URL.includes('YOUR-WORKER')) throw new Error('Production API URL is not configured');
         const stopIds = [...new Set(CONFIG.journeys.map(journey => journey.stopId))];
         const query = stopIds.map(id => `stopId=${encodeURIComponent(id)}`).join('&');
         const response = await fetch(`${API_BASE_URL}?${query}`, {
@@ -345,21 +420,25 @@
         if (response.status === 401) throw new AccessKeyError();
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
-        if (payload?.message?.messageCode !== 1) throw new Error('Invalid API response');
+        if (!validApiPayload(payload)) throw new Error('Invalid API response');
         const data = normalize(payload);
         currentData = data; dataTimestamp = Date.now();
         storeAccessKey(accessKey);
         render(data); updated.textContent = `Updated ${formatClock(dataTimestamp)}`;
+        scheduleStaleDataExpiry();
         succeeded = true;
       } catch (error) {
         if (error instanceof AccessKeyError) accessRejected = true;
-        else if (!dataTimestamp || Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs) renderFailure();
+        else if (!document.hidden && dataIsStale()) renderFailure();
         else setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
         failed = true;
       } finally {
         clearTimeout(timeout);
-        const indicatorDelay = CONFIG.minRefreshIndicatorMs - (performance.now() - refreshStartedAt);
-        if (indicatorDelay > 0) await new Promise(resolve => setTimeout(resolve, indicatorDelay));
+        if (activeRequestController === controller) activeRequestController = undefined;
+        if (!initial) {
+          const indicatorDelay = CONFIG.minRefreshIndicatorMs - (performance.now() - refreshStartedAt);
+          if (indicatorDelay > 0) await new Promise(resolve => setTimeout(resolve, indicatorDelay));
+        }
         busy = false;
         board.setAttribute('aria-busy', 'false');
         refreshButton.disabled = false;
@@ -371,6 +450,7 @@
           return;
         }
         requestAnimationFrame(() => {
+          if (document.hidden) return;
           if (succeeded && !initial) showRefreshSuccess();
           else if (failed && manual) showRefreshFailure();
         });
@@ -378,30 +458,40 @@
     }
     accessForm.addEventListener('submit', event => {
       event.preventDefault();
-      const candidate = accessKeyInput.value.trim();
+      const candidate = normalizeAccessKey(accessKeyInput.value);
       if (!candidate) {
-        accessError.textContent = 'Enter an access key.';
+        accessError.textContent = 'Enter a valid access key without spaces.';
         accessError.hidden = false;
         return;
       }
       accessKey = candidate;
       accessKeyInput.value = '';
       showDeparturesInterface();
-      resetAutoRefreshTimer();
-      loadDepartures({ initial:true });
+      void refreshAndSchedule({ initial:true });
     });
     refreshButton.addEventListener('click', () => {
-      resetAutoRefreshTimer();
-      loadDepartures({ manual:true });
+      void refreshAndSchedule({ manual:true });
     });
-    window.addEventListener('online', () => { setNotice(''); loadDepartures(); });
+    window.addEventListener('online', () => {
+      setNotice('');
+      void refreshAndSchedule();
+    });
     window.addEventListener('offline', () => {
-      if (!dataTimestamp || Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs) renderFailure();
+      cancelAutoRefresh();
+      activeRequestController?.abort();
+      if (dataIsStale()) renderFailure();
       else setNotice('You are offline.', true);
     });
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) return;
-      if (navigator.onLine) loadDepartures();
+      if (document.hidden) {
+        cancelAutoRefresh();
+        cancelStaleDataTimer();
+        activeRequestController?.abort();
+        return;
+      }
+      scheduleStaleDataExpiry();
+      if (navigator.onLine) void refreshAndSchedule();
+      else if (dataIsStale()) renderFailure();
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistration().then(registration => registration?.update()).catch(() => {});
       }
@@ -418,13 +508,25 @@
         worker.postMessage({ type:'GET_VERSION' }, [channel.port2]);
       });
     }
-    function resetAutoRefreshTimer() {
+    function cancelAutoRefresh() {
       clearTimeout(autoRefreshTimer);
+      autoRefreshTimer = undefined;
+    }
+    function scheduleAutoRefresh() {
+      cancelAutoRefresh();
+      if (!accessKey || document.hidden || !navigator.onLine) return;
       autoRefreshTimer = setTimeout(() => {
-        if (dataTimestamp && Date.now() - dataTimestamp >= CONFIG.maxDataAgeMs && (document.hidden || !navigator.onLine)) renderFailure();
-        if (!document.hidden && navigator.onLine) loadDepartures();
-        resetAutoRefreshTimer();
+        autoRefreshTimer = undefined;
+        void refreshAndSchedule();
       }, CONFIG.refreshMs);
+    }
+    async function refreshAndSchedule(options = {}) {
+      cancelAutoRefresh();
+      try {
+        await loadDepartures(options);
+      } finally {
+        scheduleAutoRefresh();
+      }
     }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -444,11 +546,10 @@
     }
     if (accessKey) {
       showDeparturesInterface();
-      loadDepartures({ initial:true });
+      void refreshAndSchedule({ initial:true });
     } else {
       showAccessPanel();
     }
-    resetAutoRefreshTimer();
   </script>
 </body>
 </html>
