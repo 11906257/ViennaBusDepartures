@@ -5,8 +5,8 @@ A small, framework-free Progressive Web App showing upcoming departures for bus 
 ## Features
 
 - Two upcoming departures per direction in a single-column mobile layout
-- Automatic refresh every 20 seconds while the app is visible and online; manual refresh restarts the 20-second timer
-- No refresh timers or active API requests while the app is in the background
+- Automatic refresh every 20 seconds while the app is visible, focused, and online; manual refresh restarts the 20-second timer
+- No refresh timers or active API requests in background tabs, unfocused windows, other desktops, or backgrounded iPhone apps
 - Manual refresh with success and failure feedback
 - Short-running buses show their actual destination in a centered warning tag
 - Automatic light and dark mode
@@ -87,7 +87,7 @@ The Worker requires the `ACCESS_KEY` secret, accepts the configured browser orig
 5. Save and open the generated GitHub Pages URL after deployment completes.
 6. Enter the same value stored in Cloudflare as `ACCESS_KEY` when the app asks for access.
 
-This release uses version `v25`. Before a future upload, increment `APP_VERSION` in `index.html`, `dev-server.py`, and `proxy/cloudflare-worker.js`, increment `CACHE_VERSION` in `service-worker.js`, and update the matching asset query strings in `index.html`, `service-worker.js`, and `manifest.webmanifest`.
+This release uses version `v26`. Before a future upload, increment `APP_VERSION` in `index.html`, `dev-server.py`, and `proxy/cloudflare-worker.js`, increment `CACHE_VERSION` in `service-worker.js`, and update the matching asset query strings in `index.html`, `service-worker.js`, and `manifest.webmanifest`.
 
 ## Optional local test
 

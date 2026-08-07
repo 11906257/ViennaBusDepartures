@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Departures">
   <meta name="description" content="Upcoming departures for bus routes 59A and 14A in Margareten, Vienna.">
   <meta name="referrer" content="no-referrer">
-  <link rel="manifest" href="./manifest.webmanifest?v=25">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=25">
+  <link rel="manifest" href="./manifest.webmanifest?v=26">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=26">
   <title>59A &amp; 14A Departures</title>
   <style>
     :root {
@@ -40,7 +40,7 @@
       max(20px, env(safe-area-inset-top)) 18px max(26px, env(safe-area-inset-bottom)); }
     header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:8px 2px 28px; }
     .brand { display:flex; align-items:flex-start; gap:13px; min-width:0; }
-    .header-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:48px; }
+    .header-actions { display:flex; flex:0 0 48px; flex-direction:column; align-items:center; gap:5px; }
     .app-mark { flex:0 0 50px; width:50px; height:50px; border-radius:14px;
       box-shadow:0 10px 25px rgba(0,83,190,.24); }
     h1 { margin:0; font-size:clamp(23px,7vw,31px); letter-spacing:-.035em; line-height:1.05; }
@@ -66,6 +66,8 @@
     .refresh.success::after { content:'✓'; opacity:1; transform:scale(1); }
     .refresh.failed { color:var(--danger); background:var(--danger-bg); box-shadow:0 10px 25px rgba(149,80,76,.13); }
     .refresh.failed::after { content:'!'; opacity:1; transform:scale(1); }
+    .updated { width:48px; color:var(--muted); font-size:9px; line-height:1.2; text-align:center; }
+    .updated:empty { display:none; }
     @media (prefers-color-scheme: dark) {
       .refresh.failed { color:#efc1bd; background:#553330; }
     }
@@ -123,9 +125,6 @@
       background:linear-gradient(90deg,var(--line),rgba(255,255,255,.14),var(--line));
       background-size:220% 100%; animation:shimmer 1.3s infinite; }
     @keyframes shimmer { to { background-position:-220% 0; } }
-    footer { display:flex; justify-content:flex-end; gap:12px; margin:18px 4px 0; color:var(--muted);
-      font-size:11px; line-height:1.35; }
-    footer span:last-child { text-align:right; }
     @media (min-width:700px) {
       .app { padding-top:42px; }
       .board { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -137,7 +136,7 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img class="app-mark" src="./icons/icon-192.png?v=25" alt="">
+        <img class="app-mark" src="./icons/icon-192.png?v=26" alt="">
         <div>
           <h1>Next departures</h1>
           <div class="route-tags" aria-label="Routes 59A and 14A"><span class="route-tag">59A</span><span class="route-tag">14A</span></div>
@@ -148,6 +147,7 @@
         <button class="refresh" id="refresh" type="button" aria-label="Refresh departures">
           <span class="refresh-spinner" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 11a8.1 8.1 0 0 0-15.5-3M4 4v4h4M4 13a8.1 8.1 0 0 0 15.5 3M20 20v-4h-4"/></svg></span>
         </button>
+        <span class="updated" id="updated"></span>
       </div>
     </header>
     <div class="notice" id="notice" role="status"></div>
@@ -161,12 +161,11 @@
       <p class="access-error" id="access-error" role="alert" hidden></p>
     </section>
     <section class="board" id="board" hidden></section>
-    <footer id="footer" hidden><span id="updated"></span></footer>
   </main>
 
   <script>
     // Local development uses dev-server.py. Set this to the deployed Worker URL for GitHub Pages.
-    const APP_VERSION = 'v25';
+    const APP_VERSION = 'v26';
     const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
     const ACCESS_KEY_STORAGE_KEY = 'vienna-bus-departures-access-key';
     const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
@@ -197,7 +196,6 @@
     const accessForm = document.querySelector('#access-form');
     const accessKeyInput = document.querySelector('#access-key');
     const accessError = document.querySelector('#access-error');
-    const footer = document.querySelector('#footer');
     const updated = document.querySelector('#updated');
     const refreshButton = document.querySelector('#refresh');
     let accessKey = readStoredAccessKey();
@@ -259,7 +257,7 @@
           const mins = Math.max(0, Number(item.countdown));
           const destinationLabel = formatDestinationLabel(item.vehicleTowards);
           const alternateDestination = destinationLabel && !destinationMatches(item.vehicleTowards, journey.match)
-            ? `<span class="destination-tag" title="${esc(destinationLabel)}"><span class="destination-alert" aria-hidden="true"><svg viewBox="0 0 14 14"><path class="destination-alert-triangle" d="M7 1.1c.42 0 .8.23 1.02.61l5.18 9.08c.44.77-.11 1.71-1.02 1.71H1.82c-.91 0-1.46-.94-1.02-1.71l5.18-9.08C6.2 1.33 6.58 1.1 7 1.1Z"/><rect class="destination-alert-mark" x="6.35" y="4.25" width="1.3" height="4.35" rx=".65"/><circle class="destination-alert-mark" cx="7" cy="10.35" r=".75"/></svg></span><span class="destination-name">${esc(destinationLabel)}</span></span>`
+            ? `<span class="destination-tag" title="To ${esc(destinationLabel)}"><span class="destination-alert" aria-hidden="true"><svg viewBox="0 0 14 14"><path class="destination-alert-triangle" d="M7 1.1c.42 0 .8.23 1.02.61l5.18 9.08c.44.77-.11 1.71-1.02 1.71H1.82c-.91 0-1.46-.94-1.02-1.71l5.18-9.08C6.2 1.33 6.58 1.1 7 1.1Z"/><rect class="destination-alert-mark" x="6.35" y="4.25" width="1.3" height="4.35" rx=".65"/><circle class="destination-alert-mark" cx="7" cy="10.35" r=".75"/></svg></span><span class="destination-name">To ${esc(destinationLabel)}</span></span>`
             : '';
           return `<li class="departure"><div class="time">${esc(formatClock(item.time))}</div>${alternateDestination}<div class="minutes ${mins <= 1 ? 'now' : ''}">${mins <= 1 ? 'now' : `${mins}<small>min</small>`}</div></li>`;
         }).join('')}</ul>` : '<div class="state">No departures in the next 60 minutes.</div>';
@@ -274,6 +272,11 @@
       notice.textContent = message;
       notice.className = `notice${message ? ' visible' : ''}${offline ? ' offline' : ''}`;
     }
+    function setUpdatedTimestamp(value = 0) {
+      const time = value ? formatClock(value) : '';
+      updated.textContent = time;
+      updated.setAttribute('aria-label', time ? `Updated ${time}` : '');
+    }
     function showAccessPanel(message = '') {
       cancelAutoRefresh();
       cancelStaleDataTimer();
@@ -281,13 +284,12 @@
       accessKey = '';
       currentData = [];
       dataTimestamp = 0;
-      updated.textContent = '';
+      setUpdatedTimestamp();
       accessKeyInput.value = '';
       accessError.textContent = message;
       accessError.hidden = !message;
       accessPanel.hidden = false;
       board.hidden = true;
-      footer.hidden = true;
       refreshButton.disabled = true;
       refreshButton.classList.remove('loading', 'success', 'failed');
       refreshButton.setAttribute('aria-label', 'Enter access key first');
@@ -298,7 +300,6 @@
       accessError.hidden = true;
       accessPanel.hidden = true;
       board.hidden = false;
-      footer.hidden = false;
       refreshButton.disabled = false;
       refreshButton.setAttribute('aria-label', 'Refresh departures');
       renderLoading();
@@ -306,7 +307,7 @@
     function renderFailure() {
       currentData = []; dataTimestamp = 0;
       cancelStaleDataTimer();
-      updated.textContent = '';
+      setUpdatedTimestamp();
       renderLoading();
       setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
     }
@@ -368,13 +369,16 @@
     function dataIsStale(now = Date.now()) {
       return !dataTimestamp || now - dataTimestamp >= CONFIG.maxDataAgeMs;
     }
+    function appIsActive() {
+      return !document.hidden && (document.hasFocus?.() ?? true);
+    }
     function cancelStaleDataTimer() {
       clearTimeout(staleDataTimer);
       staleDataTimer = undefined;
     }
     function scheduleStaleDataExpiry() {
       cancelStaleDataTimer();
-      if (!dataTimestamp || document.hidden) return;
+      if (!dataTimestamp || !appIsActive()) return;
       const remaining = Math.max(0, dataTimestamp + CONFIG.maxDataAgeMs - Date.now());
       staleDataTimer = setTimeout(() => {
         staleDataTimer = undefined;
@@ -388,7 +392,7 @@
       if (!accessKey) return;
       const expired = dataTimestamp && dataIsStale();
       if (expired) { currentData = []; dataTimestamp = 0; renderLoading(); }
-      if (busy || document.hidden || !navigator.onLine) {
+      if (busy || !appIsActive() || !navigator.onLine) {
         if (!navigator.onLine && dataIsStale()) renderFailure();
         else if (!navigator.onLine) setNotice('You are offline.', true);
         if (manual && !navigator.onLine) showRefreshFailure();
@@ -424,12 +428,12 @@
         const data = normalize(payload);
         currentData = data; dataTimestamp = Date.now();
         storeAccessKey(accessKey);
-        render(data); updated.textContent = `Updated ${formatClock(dataTimestamp)}`;
+        render(data); setUpdatedTimestamp(dataTimestamp);
         scheduleStaleDataExpiry();
         succeeded = true;
       } catch (error) {
         if (error instanceof AccessKeyError) accessRejected = true;
-        else if (!document.hidden && dataIsStale()) renderFailure();
+        else if (appIsActive() && dataIsStale()) renderFailure();
         else setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
         failed = true;
       } finally {
@@ -450,7 +454,7 @@
           return;
         }
         requestAnimationFrame(() => {
-          if (document.hidden) return;
+          if (!appIsActive()) return;
           if (succeeded && !initial) showRefreshSuccess();
           else if (failed && manual) showRefreshFailure();
         });
@@ -474,7 +478,7 @@
     });
     window.addEventListener('online', () => {
       setNotice('');
-      void refreshAndSchedule();
+      if (appIsActive()) void refreshAndSchedule();
     });
     window.addEventListener('offline', () => {
       cancelAutoRefresh();
@@ -482,20 +486,30 @@
       if (dataIsStale()) renderFailure();
       else setNotice('You are offline.', true);
     });
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        cancelAutoRefresh();
-        cancelStaleDataTimer();
-        activeRequestController?.abort();
+    function pauseBackgroundWork() {
+      cancelAutoRefresh();
+      cancelStaleDataTimer();
+      activeRequestController?.abort();
+    }
+    function resumeForegroundWork() {
+      if (!appIsActive()) {
+        pauseBackgroundWork();
         return;
       }
       scheduleStaleDataExpiry();
       if (navigator.onLine) void refreshAndSchedule();
       else if (dataIsStale()) renderFailure();
+    }
+    document.addEventListener('visibilitychange', () => {
+      resumeForegroundWork();
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration().then(registration => registration?.update()).catch(() => {});
+        if (appIsActive()) {
+          navigator.serviceWorker.getRegistration().then(registration => registration?.update()).catch(() => {});
+        }
       }
     });
+    window.addEventListener('focus', resumeForegroundWork);
+    window.addEventListener('blur', pauseBackgroundWork);
     function getWorkerVersion(worker) {
       if (!worker) return Promise.resolve(null);
       return new Promise(resolve => {
@@ -514,7 +528,7 @@
     }
     function scheduleAutoRefresh() {
       cancelAutoRefresh();
-      if (!accessKey || document.hidden || !navigator.onLine) return;
+      if (!accessKey || !appIsActive() || !navigator.onLine) return;
       autoRefreshTimer = setTimeout(() => {
         autoRefreshTimer = undefined;
         void refreshAndSchedule();
