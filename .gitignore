@@ -10,3 +10,4 @@ __pycache__/
 *.log
 *.pem
 *.key
+/README 2.md

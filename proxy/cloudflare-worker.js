@@ -1,5 +1,5 @@
 // Deploy this file separately as a Cloudflare Worker.
-const APP_VERSION = 'v28';
+const APP_VERSION = 'v29';
 const ALLOWED_ORIGIN = 'https://11906257.github.io';
 const UPSTREAM_URL = 'https://www.wienerlinien.at/ogd_realtime/monitor';
 const ALLOWED_STOP_IDS = new Set(['754', '1699', '1687', '1698']);

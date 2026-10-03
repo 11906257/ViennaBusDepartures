@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Departures">
   <meta name="description" content="Upcoming departures for bus routes 59A and 14A in Margareten, Vienna.">
   <meta name="referrer" content="no-referrer">
-  <link rel="manifest" href="./manifest.webmanifest?v=28">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=28">
+  <link rel="manifest" href="./manifest.webmanifest?v=29">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=29">
   <title>59A &amp; 14A Departures</title>
   <style>
     :root {
@@ -30,20 +30,23 @@
     }
     * { box-sizing: border-box; }
     [hidden] { display:none!important; }
-    html { background: var(--bg); }
-    body { margin:0; min-height:100dvh; color:var(--text); background:
+    html { height:100%; overflow:hidden; overscroll-behavior:none; background:var(--bg); }
+    body { position:fixed; inset:0; margin:0; height:100dvh; overflow:hidden; overscroll-behavior:none;
+      color:var(--text); background:
       radial-gradient(circle at 90% -10%, rgba(0,103,177,.16), transparent 36%), var(--bg);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
       -webkit-font-smoothing:antialiased; }
     button { font:inherit; }
-    .app { width:min(100%, 600px); min-height:100dvh; margin:auto; padding:
-      max(20px, env(safe-area-inset-top)) 18px max(26px, env(safe-area-inset-bottom)); }
-    header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:8px 2px 28px; }
-    .brand { display:flex; align-items:flex-start; gap:13px; min-width:0; }
+    .app { display:flex; flex-direction:column; gap:12px; width:min(100%,600px); height:100%;
+      margin:auto; padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right))
+      max(12px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); }
+    header { display:flex; flex-shrink:0; align-items:center; justify-content:space-between;
+      gap:12px; margin:0 2px; }
+    .brand { display:flex; align-items:flex-start; gap:10px; min-width:0; }
     .header-actions { display:flex; flex:0 0 48px; flex-direction:column; align-items:center; gap:5px; }
     .app-mark { flex:0 0 50px; width:50px; height:50px; border-radius:14px;
       box-shadow:0 10px 25px rgba(0,83,190,.24); }
-    h1 { margin:0; font-size:clamp(23px,7vw,31px); letter-spacing:-.035em; line-height:1.05; }
+    h1 { margin:0; font-size:clamp(20px,6.2vw,28px); letter-spacing:-.035em; line-height:1.05; }
     .route-tags { display:flex; gap:5px; margin-top:6px; }
     .route-tag { display:inline-grid; place-items:center; min-width:34px; height:20px; padding:0 7px;
       border-radius:6px; background:var(--blue); color:#fff; font-family:Arial,Helvetica,sans-serif;
@@ -72,26 +75,29 @@
       .refresh.failed { color:#efc1bd; background:#553330; }
     }
     @keyframes spin { from { transform:rotate(0turn); } to { transform:rotate(-1turn); } }
-    .notice { display:none; margin:0 0 16px; padding:12px 14px; border-radius:15px;
+    .notice { display:none; flex-shrink:0; margin:0; padding:10px 12px; border-radius:15px;
       font-size:13px; line-height:1.35; background:var(--danger-bg); color:var(--text); }
     .notice.visible { display:block; }
     .notice.offline { background:var(--warning-bg); }
-    .access-card { padding:20px; border:1px solid var(--line); border-radius:var(--radius);
+    .access-card { min-height:0; overflow:auto; overscroll-behavior:contain;
+      padding:20px; border:1px solid var(--line); border-radius:var(--radius);
       background:var(--surface); box-shadow:var(--shadow); backdrop-filter:blur(18px); }
     .access-title { margin:0; font-size:20px; letter-spacing:-.025em; }
     .access-copy { margin:7px 0 16px; color:var(--muted); font-size:13px; line-height:1.4; }
     .access-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
     .access-input { min-width:0; height:44px; padding:0 13px; border:1px solid var(--line);
-      border-radius:13px; outline:none; color:var(--text); background:var(--bg); font:inherit; }
+      border-radius:13px; outline:none; color:var(--text); background:var(--bg); font:inherit; font-size:16px; }
     .access-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,103,177,.14); }
     .access-submit { height:44px; padding:0 16px; border:1px solid var(--line); border-radius:13px;
       color:var(--text); background:var(--bg); font-weight:700; cursor:pointer; touch-action:manipulation; }
     .access-submit:active { transform:scale(.98); }
     .access-error { margin:12px 0 0; color:var(--danger); font-size:12px; line-height:1.35; }
-    .board { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
-    .card { overflow:hidden; border:1px solid var(--line); border-radius:var(--radius);
+    .board { display:grid; flex:1; min-height:0; grid-template-columns:minmax(0,1fr);
+      grid-template-rows:repeat(4,minmax(0,1fr)); gap:8px; }
+    .card { display:flex; flex-direction:column; min-height:0; overflow:hidden;
+      border:1px solid var(--line); border-radius:var(--radius);
       background:var(--surface); box-shadow:var(--shadow); backdrop-filter:blur(18px); }
-    .card-head { padding:12px 12px 10px; border-bottom:1px solid var(--line); }
+    .card-head { flex-shrink:0; padding:8px 12px 7px; border-bottom:1px solid var(--line); }
     .direction { display:flex; align-items:center; gap:9px; min-width:0; }
     .line-badge { display:grid; place-items:center; flex:0 0 42px; height:29px; border-radius:5px;
       background:var(--blue); color:#fff; font-family:Arial,Helvetica,sans-serif; font-size:15px;
@@ -101,9 +107,10 @@
       font-weight:750; letter-spacing:.04em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
     h2 { overflow:hidden; margin:0; font-size:15px; letter-spacing:-.025em;
       text-overflow:ellipsis; white-space:nowrap; }
-    .departures { list-style:none; margin:0; padding:2px 12px 5px; }
+    .departures { display:grid; flex:1; min-height:0; grid-template-rows:repeat(2,minmax(0,1fr));
+      list-style:none; margin:0; padding:0 12px; }
     .departure { display:grid; grid-template-columns:minmax(3.5rem,1fr) minmax(0,auto) minmax(3.5rem,1fr); align-items:center; gap:8px;
-      min-height:51px; border-bottom:1px solid var(--line); }
+      min-height:0; border-bottom:1px solid var(--line); }
     .departure:last-child { border-bottom:0; }
     .time { grid-column:1; font-size:14px; font-variant-numeric:tabular-nums; }
     .destination-tag { grid-column:2; display:flex; align-items:center; justify-self:center; gap:4px;
@@ -118,16 +125,58 @@
       font-variant-numeric:tabular-nums; white-space:nowrap; }
     .minutes small { margin-left:2px; color:var(--muted); font-size:9px; font-weight:650; letter-spacing:0; }
     .minutes.now { color:var(--text); font-size:15px; }
-    .state { min-height:104px; display:grid; place-items:center; padding:18px 12px; color:var(--muted);
+    .state { display:grid; flex:1; min-height:0; place-items:center; padding:8px 12px; color:var(--muted);
       text-align:center; font-size:11px; line-height:1.4; }
-    .skeleton { width:100%; }
-    .skeleton span { display:block; height:16px; margin:15px 0; border-radius:10px;
+    .skeleton { display:grid; gap:12px; width:100%; }
+    .skeleton span { display:block; height:14px; border-radius:10px;
       background:linear-gradient(90deg,var(--line),rgba(255,255,255,.14),var(--line));
       background-size:220% 100%; animation:shimmer 1.3s infinite; }
     @keyframes shimmer { to { background-position:-220% 0; } }
     @media (min-width:700px) {
-      .app { padding-top:42px; }
-      .board { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .app { padding-top:max(24px,env(safe-area-inset-top)); }
+      .board { grid-template-columns:repeat(2,minmax(0,1fr));
+        grid-template-rows:repeat(2,minmax(0,1fr)); max-height:440px; }
+    }
+    @media (max-width:699px) and (max-height:600px) {
+      .app { gap:8px; }
+      .card-head { padding-top:5px; padding-bottom:5px; }
+      .minutes { font-size:18px; }
+      .skeleton { gap:8px; }
+      .skeleton span { height:10px; }
+    }
+    @media (orientation:portrait) and (max-height:500px), (orientation:landscape) and (max-height:350px) {
+      .card-head { padding:4px 10px; }
+      .line-badge { flex-basis:38px; height:24px; font-size:14px; }
+      .eyebrow { font-size:8px; }
+      .direction-text h2 { font-size:14px; }
+      .departures { padding:0 10px; }
+      .time { line-height:1.1; }
+      .minutes { font-size:16px; line-height:1; }
+      .state { padding:2px 10px; }
+      .skeleton { gap:6px; }
+      .skeleton span { height:8px; }
+    }
+    @media (orientation:portrait) and (max-height:500px) {
+      .station { margin-top:3px; font-size:11px; }
+      .route-tags { margin-top:4px; }
+      .route-tag { height:18px; font-size:10px; }
+      .app-mark { flex-basis:44px; width:44px; height:44px; }
+      .refresh { width:44px; height:44px; }
+      .header-actions { gap:3px; }
+    }
+    @media (orientation:landscape) and (max-height:500px) {
+      .board { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); }
+    }
+    @media (orientation:landscape) and (max-height:350px) {
+      .app { gap:8px; padding-top:6px; padding-bottom:6px; }
+      .brand > div { display:grid; grid-template-columns:auto auto; gap:3px 8px; }
+      h1 { font-size:20px; }
+      .route-tags { align-self:center; margin:0; }
+      .station { grid-column:1 / -1; margin:0; font-size:11px; }
+      .app-mark { flex-basis:40px; width:40px; height:40px; }
+      .header-actions { flex-basis:auto; flex-direction:row; }
+      .refresh { width:44px; height:44px; }
+      .updated { width:32px; }
     }
     @media (prefers-reduced-motion:reduce) { * { animation:none!important; scroll-behavior:auto!important; } }
   </style>
@@ -136,7 +185,7 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img class="app-mark" src="./icons/icon-192.png?v=28" alt="">
+        <img class="app-mark" src="./icons/icon-192.png?v=29" alt="">
         <div>
           <h1>Next departures</h1>
           <div class="route-tags" aria-label="Routes 59A and 14A"><span class="route-tag">59A</span><span class="route-tag">14A</span></div>
@@ -165,7 +214,7 @@
 
   <script>
     // Local development uses dev-server.py. Set this to the deployed Worker URL for GitHub Pages.
-    const APP_VERSION = 'v28';
+    const APP_VERSION = 'v29';
     const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
     const ACCESS_KEY_STORAGE_KEY = 'vienna-bus-departures-access-key';
     const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);

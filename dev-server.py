@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 
 HOST = "127.0.0.1"
 PORT = 8080
-APP_VERSION = "v28"
+APP_VERSION = "v29"
 ACCESS_KEY = os.environ.get("BUS_DEPARTURES_ACCESS_KEY", "")
 ROOT = Path(__file__).resolve().parent
 UPSTREAM_URL = "https://www.wienerlinien.at/ogd_realtime/monitor"
