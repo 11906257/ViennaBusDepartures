@@ -1,5 +1,5 @@
 // Deploy this file separately as a Cloudflare Worker.
-const APP_VERSION = 'v27';
+const APP_VERSION = 'v28';
 const ALLOWED_ORIGIN = 'https://11906257.github.io';
 const UPSTREAM_URL = 'https://www.wienerlinien.at/ogd_realtime/monitor';
 const ALLOWED_STOP_IDS = new Set(['754', '1699', '1687', '1698']);
@@ -95,7 +95,8 @@ export default {
       const upstreamResponse = await fetch(upstreamUrl, {
         headers: { Accept: 'application/json' },
         signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-        redirect: 'error'
+        // Reject redirects through response.ok; workerd does not accept 'error'.
+        redirect: 'manual'
       });
       if (!upstreamResponse.ok) return textResponse('Upstream API error', 502);
       return new Response(upstreamResponse.body, {

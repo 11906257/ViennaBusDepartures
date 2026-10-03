@@ -69,7 +69,9 @@ test('worker rejects unknown parameters and invalid stops', async () => {
 
 test('worker forwards valid stops without duplicates and prevents caching', async () => {
   let requestedUrl = '';
-  const worker = loadWorker(async url => {
+  const worker = loadWorker(async (url, options) => {
+    // Workerd rejects redirect:'error', although Node's fetch accepts it.
+    if (options.redirect === 'error') throw new TypeError('Invalid redirect value');
     requestedUrl = String(url);
     return new Response('{"message":{"messageCode":1}}', {
       status:200,
