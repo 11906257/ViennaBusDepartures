@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Departures">
   <meta name="description" content="Upcoming departures for bus routes 59A and 14A in Margareten, Vienna.">
   <meta name="referrer" content="no-referrer">
-  <link rel="manifest" href="./manifest.webmanifest?v=26">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=26">
+  <link rel="manifest" href="./manifest.webmanifest?v=27">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=27">
   <title>59A &amp; 14A Departures</title>
   <style>
     :root {
@@ -102,7 +102,7 @@
     h2 { overflow:hidden; margin:0; font-size:15px; letter-spacing:-.025em;
       text-overflow:ellipsis; white-space:nowrap; }
     .departures { list-style:none; margin:0; padding:2px 12px 5px; }
-    .departure { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px;
+    .departure { display:grid; grid-template-columns:minmax(3.5rem,1fr) minmax(0,auto) minmax(3.5rem,1fr); align-items:center; gap:8px;
       min-height:51px; border-bottom:1px solid var(--line); }
     .departure:last-child { border-bottom:0; }
     .time { grid-column:1; font-size:14px; font-variant-numeric:tabular-nums; }
@@ -136,7 +136,7 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img class="app-mark" src="./icons/icon-192.png?v=26" alt="">
+        <img class="app-mark" src="./icons/icon-192.png?v=27" alt="">
         <div>
           <h1>Next departures</h1>
           <div class="route-tags" aria-label="Routes 59A and 14A"><span class="route-tag">59A</span><span class="route-tag">14A</span></div>
@@ -165,7 +165,7 @@
 
   <script>
     // Local development uses dev-server.py. Set this to the deployed Worker URL for GitHub Pages.
-    const APP_VERSION = 'v26';
+    const APP_VERSION = 'v27';
     const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
     const ACCESS_KEY_STORAGE_KEY = 'vienna-bus-departures-access-key';
     const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
@@ -178,7 +178,7 @@
         { line:'59A', stopId:'1687', match:'Meidling', label:'Bhf. Meidling', station:'Arbeitergasse' },
         { line:'59A', stopId:'1698', match:'Karlsplatz', label:'Oper, Karlsplatz', station:'Arbeitergasse' },
         { line:'14A', stopId:'754', match:'Reumannplatz', label:'Reumannplatz', station:'Arbeitergasse' },
-        { line:'14A', stopId:'770', match:'Neubaugasse', label:'Neubaugasse', station:'Bacherplatz' }
+        { line:'14A', stopId:'1699', match:'Neubaugasse', label:'Neubaugasse', station:'Bacherplatz' }
       ].map(Object.freeze)),
       refreshMs: 20_000,
       maxDepartures: 2,
@@ -188,7 +188,7 @@
       maxAccessKeyLength: 256
     });
     const CLOCK_FORMATTER = new Intl.DateTimeFormat('en-GB', {
-      hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+      hour:'2-digit', minute:'2-digit', hourCycle:'h23', timeZone:'Europe/Vienna'
     });
     const board = document.querySelector('#board');
     const notice = document.querySelector('#notice');
@@ -200,10 +200,8 @@
     const refreshButton = document.querySelector('#refresh');
     let accessKey = readStoredAccessKey();
     let busy = false;
-    let currentData = [];
     let dataTimestamp = 0;
-    let successTimer;
-    let failureTimer;
+    let feedbackTimer;
     let autoRefreshTimer;
     let staleDataTimer;
     let activeRequestController;
@@ -212,7 +210,7 @@
 
     function normalizeAccessKey(value) {
       const key = String(value ?? '').trim();
-      return key && key.length <= CONFIG.maxAccessKeyLength && !/\s/u.test(key) ? key : '';
+      return key.length <= CONFIG.maxAccessKeyLength && /^[!-~]+$/u.test(key) ? key : '';
     }
     function readStoredAccessKey() {
       try {
@@ -245,28 +243,33 @@
       return String(value ?? '').toLocaleLowerCase('de-AT').includes(expectedPart.toLocaleLowerCase('de-AT'));
     }
     function formatDestinationLabel(value) {
-      return String(value ?? '').replace(/\s+(?:(?:S|U|Ⓢ|Ⓤ)\s*)+$/u, '').trim();
+      return String(value ?? '').trim().replace(/\s+(?:(?:S|U|Ⓢ|Ⓤ)\s*)+$/u, '').trim();
+    }
+    function renderCard(journey, body) {
+      return `<article class="card"><div class="card-head"><div class="direction"><span class="line-badge">${esc(journey.line)}</span><div class="direction-text"><span class="eyebrow">${esc(journey.station)} · to</span><h2>${esc(journey.label)}</h2></div></div></div>${body}</article>`;
     }
     function render(data) {
       board.innerHTML = CONFIG.journeys.map(journey => {
         const departures = data
           .filter(item => item.stopId === journey.stopId && item.line === journey.line)
-          .sort((a, b) => Number(a.countdown) - Number(b.countdown))
+          .sort((a, b) => a.countdown - b.countdown)
           .slice(0, CONFIG.maxDepartures);
         const body = departures.length ? `<ul class="departures">${departures.map(item => {
-          const mins = Math.max(0, Number(item.countdown));
+          const mins = item.countdown;
           const destinationLabel = formatDestinationLabel(item.vehicleTowards);
           const alternateDestination = destinationLabel && !destinationMatches(item.vehicleTowards, journey.match)
             ? `<span class="destination-tag" title="To ${esc(destinationLabel)}"><span class="destination-alert" aria-hidden="true"><svg viewBox="0 0 14 14"><path class="destination-alert-triangle" d="M7 1.1c.42 0 .8.23 1.02.61l5.18 9.08c.44.77-.11 1.71-1.02 1.71H1.82c-.91 0-1.46-.94-1.02-1.71l5.18-9.08C6.2 1.33 6.58 1.1 7 1.1Z"/><rect class="destination-alert-mark" x="6.35" y="4.25" width="1.3" height="4.35" rx=".65"/><circle class="destination-alert-mark" cx="7" cy="10.35" r=".75"/></svg></span><span class="destination-name">To ${esc(destinationLabel)}</span></span>`
             : '';
           return `<li class="departure"><div class="time">${esc(formatClock(item.time))}</div>${alternateDestination}<div class="minutes ${mins <= 1 ? 'now' : ''}">${mins <= 1 ? 'now' : `${mins}<small>min</small>`}</div></li>`;
         }).join('')}</ul>` : '<div class="state">No departures in the next 60 minutes.</div>';
-        return `<article class="card"><div class="card-head"><div class="direction"><span class="line-badge">${esc(journey.line)}</span><div class="direction-text"><span class="eyebrow">${esc(journey.station)} · to</span><h2>${esc(journey.label)}</h2></div></div></div>${body}</article>`;
+        return renderCard(journey, body);
       }).join('');
       setNotice('');
     }
     function renderLoading() {
-      board.innerHTML = CONFIG.journeys.map(journey => `<article class="card"><div class="card-head"><div class="direction"><span class="line-badge">${esc(journey.line)}</span><div class="direction-text"><span class="eyebrow">${esc(journey.station)} · to</span><h2>${esc(journey.label)}</h2></div></div></div><div class="state"><div class="skeleton"><span></span><span></span></div></div></article>`).join('');
+      board.innerHTML = CONFIG.journeys.map(journey => renderCard(journey,
+        '<div class="state"><div class="skeleton"><span></span><span></span></div></div>'
+      )).join('');
     }
     function setNotice(message, offline = false) {
       notice.textContent = message;
@@ -282,7 +285,6 @@
       cancelStaleDataTimer();
       activeRequestController?.abort();
       accessKey = '';
-      currentData = [];
       dataTimestamp = 0;
       setUpdatedTimestamp();
       accessKeyInput.value = '';
@@ -291,7 +293,8 @@
       accessPanel.hidden = false;
       board.hidden = true;
       refreshButton.disabled = true;
-      refreshButton.classList.remove('loading', 'success', 'failed');
+      resetRefreshFeedback();
+      refreshButton.classList.remove('loading');
       refreshButton.setAttribute('aria-label', 'Enter access key first');
       setNotice('');
     }
@@ -305,39 +308,28 @@
       renderLoading();
     }
     function renderFailure() {
-      currentData = []; dataTimestamp = 0;
+      dataTimestamp = 0;
       cancelStaleDataTimer();
       setUpdatedTimestamp();
       renderLoading();
       setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
     }
-    function showRefreshSuccess() {
-      clearTimeout(successTimer);
-      clearTimeout(failureTimer);
-      refreshButton.classList.remove('failed');
-      refreshButton.classList.add('success');
-      refreshButton.setAttribute('aria-label', 'Successfully refreshed');
-      successTimer = setTimeout(() => {
-        refreshButton.classList.remove('success');
-        refreshButton.setAttribute('aria-label', 'Refresh departures');
-      }, 1400);
+    function resetRefreshFeedback() {
+      clearTimeout(feedbackTimer);
+      refreshButton.classList.remove('success', 'failed');
+      refreshButton.setAttribute('aria-label', 'Refresh departures');
     }
-    function showRefreshFailure() {
-      clearTimeout(successTimer);
-      clearTimeout(failureTimer);
-      refreshButton.classList.remove('success');
-      refreshButton.classList.add('failed');
-      refreshButton.setAttribute('aria-label', 'Refresh failed');
-      failureTimer = setTimeout(() => {
-        refreshButton.classList.remove('failed');
-        refreshButton.setAttribute('aria-label', 'Refresh departures');
-      }, 1800);
+    function showRefreshFeedback(succeeded) {
+      resetRefreshFeedback();
+      refreshButton.classList.add(succeeded ? 'success' : 'failed');
+      refreshButton.setAttribute('aria-label', succeeded ? 'Successfully refreshed' : 'Refresh failed');
+      feedbackTimer = setTimeout(resetRefreshFeedback, succeeded ? 1400 : 1800);
     }
     function asArray(value) {
       return Array.isArray(value) ? value : [];
     }
     function validDateValue(value) {
-      return value && Number.isFinite(Date.parse(value)) ? value : '';
+      return typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : '';
     }
     function validApiPayload(payload) {
       return payload?.message?.messageCode === 1 && Array.isArray(payload?.data?.monitors);
@@ -350,7 +342,10 @@
           const lineName = String(line?.name ?? '').trim();
           for (const departure of asArray(line?.departures?.departure)) {
             const departureTime = departure?.departureTime;
-            const countdown = Number(departureTime?.countdown);
+            const rawCountdown = departureTime?.countdown;
+            const countdown = typeof rawCountdown === 'number'
+              || (typeof rawCountdown === 'string' && rawCountdown.trim())
+              ? Number(rawCountdown) : NaN;
             const time = validDateValue(departureTime?.timeReal)
               || validDateValue(departureTime?.timePlanned);
             if (!stopId || !lineName || !time || !Number.isFinite(countdown) || countdown < 0 || countdown > 60) continue;
@@ -386,30 +381,24 @@
       }, remaining + 25);
     }
     async function loadDepartures({ initial = false, manual = false } = {}) {
-      let succeeded = false;
-      let failed = false;
-      let accessRejected = false;
+      let outcome = '';
       if (!accessKey) return;
-      const expired = dataTimestamp && dataIsStale();
-      if (expired) { currentData = []; dataTimestamp = 0; renderLoading(); }
+      if (dataTimestamp && dataIsStale()) renderFailure();
       if (busy || !appIsActive() || !navigator.onLine) {
         if (!navigator.onLine && dataIsStale()) renderFailure();
         else if (!navigator.onLine) setNotice('You are offline.', true);
-        if (manual && !navigator.onLine) showRefreshFailure();
+        if (manual && !navigator.onLine) showRefreshFeedback(false);
         return;
       }
       busy = true;
-      clearTimeout(successTimer);
-      clearTimeout(failureTimer);
+      resetRefreshFeedback();
       board.setAttribute('aria-busy', 'true');
       refreshButton.disabled = true;
-      refreshButton.classList.remove('success', 'failed');
       if (!initial) {
         refreshButton.classList.add('loading');
         refreshButton.setAttribute('aria-label', 'Refreshing departures');
       }
       const refreshStartedAt = initial ? 0 : performance.now();
-      if (initial && !currentData.length) renderLoading();
       const controller = new AbortController();
       activeRequestController = controller;
       const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
@@ -421,42 +410,53 @@
           cache: 'no-store',
           signal: controller.signal
         });
+        if (controller.signal.aborted || !appIsActive()) return;
         if (response.status === 401) throw new AccessKeyError();
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
+        if (controller.signal.aborted || !appIsActive()) return;
         if (!validApiPayload(payload)) throw new Error('Invalid API response');
         const data = normalize(payload);
-        currentData = data; dataTimestamp = Date.now();
+        dataTimestamp = Date.now();
         storeAccessKey(accessKey);
         render(data); setUpdatedTimestamp(dataTimestamp);
         scheduleStaleDataExpiry();
-        succeeded = true;
+        outcome = 'success';
       } catch (error) {
-        if (error instanceof AccessKeyError) accessRejected = true;
-        else if (appIsActive() && dataIsStale()) renderFailure();
+        if (!appIsActive()) return;
+        outcome = error instanceof AccessKeyError ? 'unauthorized' : 'failed';
+        if (outcome === 'unauthorized') setNotice('');
+        else if (dataIsStale()) renderFailure();
         else setNotice(navigator.onLine ? '' : 'You are offline.', !navigator.onLine);
-        failed = true;
       } finally {
         clearTimeout(timeout);
-        if (activeRequestController === controller) activeRequestController = undefined;
-        if (!initial) {
+        if (!initial && !controller.signal.aborted) {
           const indicatorDelay = CONFIG.minRefreshIndicatorMs - (performance.now() - refreshStartedAt);
-          if (indicatorDelay > 0) await new Promise(resolve => setTimeout(resolve, indicatorDelay));
+          if (indicatorDelay > 0) await new Promise(resolve => {
+            const timer = setTimeout(finish, indicatorDelay);
+            function finish() {
+              clearTimeout(timer);
+              controller.signal.removeEventListener('abort', finish);
+              resolve();
+            }
+            controller.signal.addEventListener('abort', finish, { once:true });
+          });
         }
+        if (activeRequestController === controller) activeRequestController = undefined;
         busy = false;
         board.setAttribute('aria-busy', 'false');
         refreshButton.disabled = false;
         refreshButton.classList.remove('loading');
         refreshButton.setAttribute('aria-label', 'Refresh departures');
-        if (accessRejected) {
+        if (outcome === 'unauthorized') {
           removeStoredAccessKey();
           showAccessPanel('The access key is incorrect.');
           return;
         }
         requestAnimationFrame(() => {
-          if (!appIsActive()) return;
-          if (succeeded && !initial) showRefreshSuccess();
-          else if (failed && manual) showRefreshFailure();
+          if (!appIsActive() || busy || !accessKey) return;
+          if (outcome === 'success' && !initial) showRefreshFeedback(true);
+          else if (outcome === 'failed' && manual) showRefreshFeedback(false);
         });
       }
     }
@@ -464,7 +464,7 @@
       event.preventDefault();
       const candidate = normalizeAccessKey(accessKeyInput.value);
       if (!candidate) {
-        accessError.textContent = 'Enter a valid access key without spaces.';
+        accessError.textContent = 'Use printable ASCII characters without spaces (maximum 256).';
         accessError.hidden = false;
         return;
       }
@@ -490,6 +490,7 @@
       cancelAutoRefresh();
       cancelStaleDataTimer();
       activeRequestController?.abort();
+      resetRefreshFeedback();
     }
     function resumeForegroundWork() {
       if (!appIsActive()) {
@@ -499,27 +500,32 @@
       scheduleStaleDataExpiry();
       if (navigator.onLine) void refreshAndSchedule();
       else if (dataIsStale()) renderFailure();
+      else setNotice('You are offline.', true);
     }
-    document.addEventListener('visibilitychange', () => {
-      resumeForegroundWork();
-      if ('serviceWorker' in navigator) {
-        if (appIsActive()) {
-          navigator.serviceWorker.getRegistration().then(registration => registration?.update()).catch(() => {});
-        }
-      }
-    });
+    document.addEventListener('visibilitychange', resumeForegroundWork);
     window.addEventListener('focus', resumeForegroundWork);
     window.addEventListener('blur', pauseBackgroundWork);
+    window.addEventListener('pagehide', pauseBackgroundWork);
+    window.addEventListener('pageshow', event => {
+      if (event.persisted) resumeForegroundWork();
+    });
     function getWorkerVersion(worker) {
       if (!worker) return Promise.resolve(null);
       return new Promise(resolve => {
         const channel = new MessageChannel();
-        const timeout = setTimeout(() => resolve(null), 1_000);
-        channel.port1.onmessage = event => {
+        function finish(version = null) {
           clearTimeout(timeout);
-          resolve(event.data?.version ?? null);
-        };
-        worker.postMessage({ type:'GET_VERSION' }, [channel.port2]);
+          channel.port1.close();
+          channel.port2.close();
+          resolve(version);
+        }
+        const timeout = setTimeout(finish, 1_000);
+        channel.port1.onmessage = event => finish(event.data?.version ?? null);
+        try {
+          worker.postMessage({ type:'GET_VERSION' }, [channel.port2]);
+        } catch {
+          finish();
+        }
       });
     }
     function cancelAutoRefresh() {
@@ -528,13 +534,14 @@
     }
     function scheduleAutoRefresh() {
       cancelAutoRefresh();
-      if (!accessKey || !appIsActive() || !navigator.onLine) return;
+      if (busy || !accessKey || !appIsActive() || !navigator.onLine) return;
       autoRefreshTimer = setTimeout(() => {
         autoRefreshTimer = undefined;
         void refreshAndSchedule();
       }, CONFIG.refreshMs);
     }
     async function refreshAndSchedule(options = {}) {
+      if (busy) return;
       cancelAutoRefresh();
       try {
         await loadDepartures(options);
@@ -544,17 +551,29 @@
     }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
+        if (LOCAL_HOSTS.has(location.hostname)) {
+          // Keep local development independent of previously cached releases.
+          navigator.serviceWorker.getRegistration().then(async registration => {
+            const scriptUrl = new URL('./service-worker.js', location.href).href;
+            if (registration?.active?.scriptURL !== scriptUrl) return;
+            await registration.unregister();
+            const keys = await caches.keys();
+            await Promise.all(keys.filter(key => key.startsWith('vienna-bus-departures-'))
+              .map(key => caches.delete(key)));
+            if (navigator.serviceWorker.controller) location.reload();
+          }).catch(() => {});
+          return;
+        }
         const hadController = Boolean(navigator.serviceWorker.controller);
         let reloadingForUpdate = false;
         navigator.serviceWorker.addEventListener('controllerchange', async () => {
           if (!hadController || reloadingForUpdate) return;
           const workerVersion = await getWorkerVersion(navigator.serviceWorker.controller);
-          if (workerVersion === APP_VERSION) return;
+          if (!workerVersion || workerVersion === APP_VERSION) return;
           reloadingForUpdate = true;
           location.reload();
         });
         navigator.serviceWorker.register('./service-worker.js', { updateViaCache:'none' })
-          .then(registration => registration.update())
           .catch(() => {});
       });
     }

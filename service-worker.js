@@ -1,13 +1,12 @@
 const CACHE_PREFIX = 'vienna-bus-departures-';
-const CACHE_VERSION = 'v26';
+const CACHE_VERSION = 'v27';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const APP_SHELL = [
-  './',
   './index.html',
-  './manifest.webmanifest?v=26',
-  './icons/icon-192.png?v=26',
-  './icons/icon-512.png?v=26',
-  './icons/apple-touch-icon.png?v=26'
+  './manifest.webmanifest?v=27',
+  './icons/icon-192.png?v=27',
+  './icons/icon-512.png?v=27',
+  './icons/apple-touch-icon.png?v=27'
 ];
 
 self.addEventListener('install', event => {
