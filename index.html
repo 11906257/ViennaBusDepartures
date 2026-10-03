@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Departures">
   <meta name="description" content="Upcoming departures for bus routes 59A and 14A in Margareten, Vienna.">
   <meta name="referrer" content="no-referrer">
-  <link rel="manifest" href="./manifest.webmanifest?v=29">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=29">
+  <link rel="manifest" href="./manifest.webmanifest?v=30">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=30">
   <title>59A &amp; 14A Departures</title>
   <style>
     :root {
@@ -30,16 +30,16 @@
     }
     * { box-sizing: border-box; }
     [hidden] { display:none!important; }
-    html { height:100%; overflow:hidden; overscroll-behavior:none; background:var(--bg); }
-    body { position:fixed; inset:0; margin:0; height:100dvh; overflow:hidden; overscroll-behavior:none;
-      color:var(--text); background:
-      radial-gradient(circle at 90% -10%, rgba(0,103,177,.16), transparent 36%), var(--bg);
+    html { height:100%; overflow:hidden; overscroll-behavior:none; background:
+      radial-gradient(circle at 90% -10%, rgba(0,103,177,.16), transparent 36%), var(--bg); }
+    body { position:fixed; inset:0; margin:0; height:100dvh; overscroll-behavior:none;
+      color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
       -webkit-font-smoothing:antialiased; }
     button { font:inherit; }
     .app { display:flex; flex-direction:column; gap:12px; width:min(100%,600px); height:100%;
-      margin:auto; padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right))
-      max(12px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); }
+      margin:auto; padding:calc(16px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right))
+      max(16px,calc(8px + env(safe-area-inset-bottom))) max(14px,env(safe-area-inset-left)); }
     header { display:flex; flex-shrink:0; align-items:center; justify-content:space-between;
       gap:12px; margin:0 2px; }
     .brand { display:flex; align-items:flex-start; gap:10px; min-width:0; }
@@ -69,8 +69,8 @@
     .refresh.success::after { content:'✓'; opacity:1; transform:scale(1); }
     .refresh.failed { color:var(--danger); background:var(--danger-bg); box-shadow:0 10px 25px rgba(149,80,76,.13); }
     .refresh.failed::after { content:'!'; opacity:1; transform:scale(1); }
-    .updated { width:48px; color:var(--muted); font-size:9px; line-height:1.2; text-align:center; }
-    .updated:empty { display:none; }
+    .updated { width:48px; min-height:11px; color:var(--muted); font-size:9px; line-height:1.2; text-align:center; }
+    .updated:empty { visibility:hidden; }
     @media (prefers-color-scheme: dark) {
       .refresh.failed { color:#efc1bd; background:#553330; }
     }
@@ -133,7 +133,7 @@
       background-size:220% 100%; animation:shimmer 1.3s infinite; }
     @keyframes shimmer { to { background-position:-220% 0; } }
     @media (min-width:700px) {
-      .app { padding-top:max(24px,env(safe-area-inset-top)); }
+      .app { padding-top:max(24px,calc(16px + env(safe-area-inset-top))); }
       .board { grid-template-columns:repeat(2,minmax(0,1fr));
         grid-template-rows:repeat(2,minmax(0,1fr)); max-height:440px; }
     }
@@ -168,7 +168,8 @@
       .board { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); }
     }
     @media (orientation:landscape) and (max-height:350px) {
-      .app { gap:8px; padding-top:6px; padding-bottom:6px; }
+      .app { gap:8px; padding-top:calc(6px + env(safe-area-inset-top));
+        padding-bottom:calc(6px + env(safe-area-inset-bottom)); }
       .brand > div { display:grid; grid-template-columns:auto auto; gap:3px 8px; }
       h1 { font-size:20px; }
       .route-tags { align-self:center; margin:0; }
@@ -185,7 +186,7 @@
   <main class="app">
     <header>
       <div class="brand">
-        <img class="app-mark" src="./icons/icon-192.png?v=29" alt="">
+        <img class="app-mark" src="./icons/icon-192.png?v=30" alt="">
         <div>
           <h1>Next departures</h1>
           <div class="route-tags" aria-label="Routes 59A and 14A"><span class="route-tag">59A</span><span class="route-tag">14A</span></div>
@@ -214,7 +215,7 @@
 
   <script>
     // Local development uses dev-server.py. Set this to the deployed Worker URL for GitHub Pages.
-    const APP_VERSION = 'v29';
+    const APP_VERSION = 'v30';
     const PRODUCTION_API_BASE_URL = 'https://vienna-bus-departures.woiki.workers.dev/monitor';
     const ACCESS_KEY_STORAGE_KEY = 'vienna-bus-departures-access-key';
     const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
